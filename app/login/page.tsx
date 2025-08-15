@@ -301,12 +301,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() =>
-                      toast({
-                        title: "Función no disponible",
-                        description: "Contacta al administrador del sistema",
-                      })
-                    }
+                    onClick={() => router.push("/forgot-password")}
                   >
                     ¿Olvidaste tu contraseña?
                   </button>

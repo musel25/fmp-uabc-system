@@ -158,3 +158,17 @@ export function onAuthStateChange(callback: (user: User | null) => void) {
     callback(session?.user || null)
   })
 }
+
+// Send password reset email
+export async function sendPasswordResetEmail(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error) throw error
+}
+
+// Update user password
+export async function updateUserPassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+}
