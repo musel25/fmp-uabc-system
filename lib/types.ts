@@ -1,0 +1,64 @@
+export type EventStatus = "borrador" | "en_revision" | "aprobado" | "rechazado"
+export type CertificateStatus = "sin_solicitar" | "solicitadas" | "emitidas"
+export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado"
+export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"
+export type EventClassification = "Conferencia" | "Seminario" | "Taller" | "Otro"
+export type EventModality = "Presencial" | "En línea" | "Mixta"
+
+export interface EventFile {
+  id: string
+  name: string
+  size: number
+  type: string
+  url: string
+}
+
+export interface Event {
+  id: string
+  name: string
+  responsible: string
+  email: string
+  phone: string
+  program: EventProgram
+  type: EventType
+  classification: EventClassification
+  classificationOther?: string
+  modality: EventModality
+  venue: string
+  startDate: string
+  endDate: string
+  hasCost: boolean
+  costDetails?: string
+  onlineInfo?: string
+  organizers: string
+  observations?: string
+  programFile?: EventFile
+  cvFiles: EventFile[]
+  status: EventStatus
+  certificateStatus: CertificateStatus
+  createdAt: string
+  updatedAt: string
+  userId: string
+  adminComments?: string
+  rejectionReason?: string
+}
+
+export interface CreateEventData {
+  name: string
+  responsible: string
+  email: string
+  phone: string
+  program: EventProgram
+  type: EventType
+  classification: EventClassification
+  classificationOther?: string
+  modality: EventModality
+  venue: string
+  startDate: string
+  endDate: string
+  hasCost: boolean
+  costDetails?: string
+  onlineInfo?: string
+  organizers: string
+  observations?: string
+}
