@@ -85,6 +85,12 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       const isValid = await form.trigger(fieldsToValidate)
       console.log('Step 1 validation:', isValid, 'Errors:', form.formState.errors)
       
+      // Check if event has cost and prevent navigation
+      const hasCost = form.watch('hasCost')
+      if (hasCost) {
+        return // Don't proceed to next step if event has cost
+      }
+      
       if (isValid) {
         setCurrentStep(2)
       }
@@ -187,7 +193,12 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
           )}
 
           {currentStep < 3 ? (
-            <Button type="button" onClick={handleNext} className="btn-primary">
+            <Button 
+              type="button" 
+              onClick={handleNext} 
+              className="btn-primary"
+              disabled={currentStep === 1 && form.watch('hasCost')}
+            >
               Siguiente
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>

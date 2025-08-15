@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
 
 interface EventDataStepProps {
@@ -160,13 +162,12 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
       {watchHasCost && (
         <div className="md:col-span-2">
-          <Label htmlFor="costDetails">Detalles del costo</Label>
-          <Textarea
-            id="costDetails"
-            {...register("costDetails")}
-            placeholder="Especifica el costo y detalles de pago"
-            className="mt-1"
-          />
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Atención:</strong> Contactar al responsable de educación continua
+            </AlertDescription>
+          </Alert>
         </div>
       )}
 

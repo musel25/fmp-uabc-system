@@ -110,8 +110,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-soft p-4">
-      <Card className="w-full max-w-md card-uabc">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
+    }}>
+      <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
           <Logo className="justify-center" />
           <div>
@@ -204,14 +206,6 @@ export default function LoginPage() {
               )}
             </div>
           </form>
-          
-          {!isSignUp && (
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-2">Para crear un administrador:</p>
-              <p className="text-xs text-muted-foreground">1. Crea una cuenta normal</p>
-              <p className="text-xs text-muted-foreground">2. Cambia el role a 'admin' en Supabase</p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
