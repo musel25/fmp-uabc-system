@@ -8,41 +8,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { AdminCertificateDrawer } from "@/components/admin/admin-certificate-drawer"
-import { Award, Eye, Calendar } from "lucide-react"
-import { mockEvents, updateEvent } from "@/lib/mock-events"
+import { Award, Eye, Calendar, Loader2 } from "lucide-react"
+import { getCertificateRequests, approveCertificateRequest } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
 
 export default function AdminCertificatesPage() {
-  const [events, setEvents] = useState<Event[]>([])
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [certificateRequests, setCertificateRequests] = useState<any[]>([])
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
-    // Load approved events that might have certificate requests
-    const approvedEvents = mockEvents.filter((event) => event.status === "aprobado")
-    setEvents(approvedEvents)
+    const loadCertificateRequests = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const requests = await getCertificateRequests()
+        setCertificateRequests(requests)
+      } catch (error) {
+        console.error('Load certificate requests error:', error)
+        setError('Error al cargar las solicitudes de constancias')
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las solicitudes de constancias",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadCertificateRequests()
   }, [])
 
-  const handleEventClick = (event: Event) => {
-    setSelectedEvent(event)
+  const handleRequestClick = (request: any) => {
+    setSelectedRequest(request)
     setIsDrawerOpen(true)
   }
 
-  const handleMarkAsIssued = async (eventId: string) => {
-    const updatedEvent = updateEvent(eventId, { certificateStatus: "emitidas" })
+  const handleApproveCertificates = async (requestId: string) => {
+    try {
+      await approveCertificateRequest(requestId)
 
-    if (updatedEvent) {
-      setEvents((prev) => prev.map((event) => (event.id === eventId ? updatedEvent : event)))
+      // Remove the approved request from the list
+      setCertificateRequests((prev) => prev.filter((req) => req.id !== requestId))
 
       toast({
-        title: "Constancias marcadas como emitidas",
-        description: `Las constancias del evento "${updatedEvent.name}" han sido marcadas como emitidas`,
+        title: "Constancias aprobadas",
+        description: "Las constancias han sido aprobadas y marcadas como emitidas",
       })
 
       setIsDrawerOpen(false)
-      setSelectedEvent(null)
+      setSelectedRequest(null)
+    } catch (error) {
+      console.error('Approve certificates error:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron aprobar las constancias",
+        variant: "destructive",
+      })
     }
   }
 
@@ -54,7 +82,6 @@ export default function AdminCertificatesPage() {
     })
   }
 
-  const eventsWithCertificateRequests = events.filter((event) => event.certificateStatus !== "sin_solicitar")
 
   return (
     <ProtectedRoute requireAdmin>
@@ -73,22 +100,8 @@ export default function AdminCertificatesPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Eventos Aprobados</p>
-                    <p className="text-2xl font-bold">{events.length}</p>
-                  </div>
-                  <Award className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="card-uabc">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Constancias Solicitadas</p>
-                    <p className="text-2xl font-bold">
-                      {events.filter((e) => e.certificateStatus === "solicitadas").length}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Solicitudes Pendientes</p>
+                    <p className="text-2xl font-bold">{isLoading ? '-' : certificateRequests.length}</p>
                   </div>
                   <Calendar className="h-8 w-8 text-amber-500" />
                 </div>
@@ -99,9 +112,25 @@ export default function AdminCertificatesPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Constancias Emitidas</p>
+                    <p className="text-sm font-medium text-muted-foreground">Solicitudes Hoy</p>
                     <p className="text-2xl font-bold">
-                      {events.filter((e) => e.certificateStatus === "emitidas").length}
+                      {isLoading ? '-' : certificateRequests.filter(req => 
+                        new Date(req.requested_at).toDateString() === new Date().toDateString()
+                      ).length}
+                    </p>
+                  </div>
+                  <Award className="h-8 w-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="card-uabc">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Eventos</p>
+                    <p className="text-2xl font-bold">
+                      {isLoading ? '-' : certificateRequests.length}
                     </p>
                   </div>
                   <Award className="h-8 w-8 text-green-500" />
@@ -113,13 +142,29 @@ export default function AdminCertificatesPage() {
           {/* Events Table */}
           <Card className="card-uabc">
             <CardHeader>
-              <CardTitle>Eventos con Solicitudes de Constancias</CardTitle>
+              <CardTitle>Solicitudes de Constancias Pendientes</CardTitle>
             </CardHeader>
             <CardContent>
-              {eventsWithCertificateRequests.length === 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Cargando solicitudes...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <Award className="h-12 w-12 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar solicitudes</h3>
+                  <p className="text-muted-foreground mb-6">{error}</p>
+                  <Button onClick={() => window.location.reload()} variant="outline">
+                    Intentar de nuevo
+                  </Button>
+                </div>
+              ) : certificateRequests.length === 0 ? (
                 <div className="text-center py-12">
                   <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No hay solicitudes de constancias</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No hay solicitudes pendientes</h3>
                   <p className="text-muted-foreground">
                     Las solicitudes de constancias aparecerán aquí cuando los organizadores las envíen
                   </p>
@@ -132,42 +177,44 @@ export default function AdminCertificatesPage() {
                         <TableHead>Evento</TableHead>
                         <TableHead>Fecha del Evento</TableHead>
                         <TableHead>Responsable</TableHead>
-                        <TableHead>Estado Constancias</TableHead>
+                        <TableHead>Participantes</TableHead>
                         <TableHead>Fecha Solicitud</TableHead>
                         <TableHead>Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {eventsWithCertificateRequests.map((event) => (
-                        <TableRow key={event.id} className="hover:bg-muted/50">
+                      {certificateRequests.map((request) => (
+                        <TableRow key={request.id} className="hover:bg-muted/50">
                           <TableCell>
                             <div>
-                              <p className="font-medium">{event.name}</p>
-                              <p className="text-sm text-muted-foreground">{event.program}</p>
+                              <p className="font-medium">{request.events.name}</p>
+                              <p className="text-sm text-muted-foreground">{request.events.program}</p>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              <p>{formatDate(event.startDate)}</p>
-                              <p className="text-muted-foreground">{formatDate(event.endDate)}</p>
+                              <p>{formatDate(request.events.start_date)}</p>
+                              <p className="text-muted-foreground">{formatDate(request.events.end_date)}</p>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{event.responsible}</p>
-                              <p className="text-sm text-muted-foreground">{event.email}</p>
+                              <p className="font-medium">{request.events.responsible}</p>
+                              <p className="text-sm text-muted-foreground">{request.events.profiles?.email}</p>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={event.certificateStatus} />
+                            <p className="text-sm font-medium">
+                              {Array.isArray(request.participant_list) ? request.participant_list.length : 0} participantes
+                            </p>
                           </TableCell>
                           <TableCell>
-                            <p className="text-sm">{formatDate(event.updatedAt)}</p>
+                            <p className="text-sm">{formatDate(request.requested_at)}</p>
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => handleEventClick(event)}>
+                            <Button variant="outline" size="sm" onClick={() => handleRequestClick(request)}>
                               <Eye className="h-4 w-4 mr-1" />
-                              Ver detalles
+                              Revisar
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -182,13 +229,13 @@ export default function AdminCertificatesPage() {
 
         {/* Certificate Review Drawer */}
         <AdminCertificateDrawer
-          event={selectedEvent}
+          request={selectedRequest}
           isOpen={isDrawerOpen}
           onClose={() => {
             setIsDrawerOpen(false)
-            setSelectedEvent(null)
+            setSelectedRequest(null)
           }}
-          onMarkAsIssued={handleMarkAsIssued}
+          onApproveCertificates={handleApproveCertificates}
         />
       </div>
     </ProtectedRoute>

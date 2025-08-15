@@ -9,23 +9,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Plus, Calendar, MapPin, Eye, Edit } from "lucide-react"
-import { getEventsByUser } from "@/lib/mock-events"
+import { Plus, Calendar, MapPin, Eye, Edit, Loader2 } from "lucide-react"
+import { getUserEvents } from "@/lib/supabase-database"
+import { getAuthUser } from "@/lib/supabase-auth"
+import { useToast } from "@/hooks/use-toast"
 import type { Event, EventStatus } from "@/lib/types"
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [activeTab, setActiveTab] = useState<string>("todos")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
-    // Get current user from localStorage
-    const userData = localStorage.getItem("fmp-user")
-    if (userData) {
-      const user = JSON.parse(userData)
-      const userEvents = getEventsByUser(user.id)
-      setEvents(userEvents)
+    const loadEvents = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // Get current authenticated user
+        const user = await getAuthUser()
+        if (!user) {
+          router.push("/login")
+          return
+        }
+
+        // Load user's events from database
+        const userEvents = await getUserEvents(user.id)
+        setEvents(userEvents)
+      } catch (error) {
+        console.error('Load events error:', error)
+        setError('Error al cargar los eventos')
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los eventos",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    loadEvents()
   }, [])
 
   const filterEventsByStatus = (status?: EventStatus) => {
@@ -100,7 +127,23 @@ export default function DashboardPage() {
             </TabsList>
 
             <TabsContent value={activeTab}>
-              {filteredEvents.length === 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Cargando eventos...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <Calendar className="h-12 w-12 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar eventos</h3>
+                  <p className="text-muted-foreground mb-6">{error}</p>
+                  <Button onClick={() => window.location.reload()} variant="outline">
+                    Intentar de nuevo
+                  </Button>
+                </div>
+              ) : filteredEvents.length === 0 ? (
                 <EmptyState status={activeTab === "todos" ? undefined : activeTab} />
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

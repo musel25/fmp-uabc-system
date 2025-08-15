@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -9,31 +10,55 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Check, X, Calendar, MapPin, Users, FileText, DollarSign, Download } from "lucide-react"
-import type { Event } from "@/lib/types"
+import type { Event, EventFile } from "@/lib/types"
+import { getEventFiles, createSignedUrl, formatFileSize, getFileIcon } from "@/lib/supabase-files"
 
 interface AdminEventReviewDrawerProps {
   event: Event | null
   isOpen: boolean
   onClose: () => void
-  onReview: (eventId: string, action: "approve" | "reject", comments?: string) => void
+  onReview: (eventId: string, action: "approve" | "reject", comments?: string, rejectionReason?: string) => void
 }
 
 export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: AdminEventReviewDrawerProps) {
   const [comments, setComments] = useState("")
+  const [rejectionReason, setRejectionReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [eventFiles, setEventFiles] = useState<EventFile[]>([])
+  const [loadingFiles, setLoadingFiles] = useState(false)
+
+  // Load event files when event changes
+  React.useEffect(() => {
+    const loadEventFiles = async () => {
+      if (!event?.id) return
+      
+      setLoadingFiles(true)
+      try {
+        const files = await getEventFiles(event.id)
+        setEventFiles(files)
+      } catch (error) {
+        console.error('Error loading event files:', error)
+      } finally {
+        setLoadingFiles(false)
+      }
+    }
+
+    loadEventFiles()
+  }, [event?.id])
 
   if (!event) return null
 
   const handleReview = async (action: "approve" | "reject") => {
-    if (action === "reject" && !comments.trim()) {
-      alert("Los comentarios son requeridos para rechazar un evento")
+    if (action === "reject" && !rejectionReason.trim()) {
+      alert("El motivo de rechazo es requerido")
       return
     }
 
     setIsSubmitting(true)
     try {
-      await onReview(event.id, action, comments.trim() || undefined)
+      await onReview(event.id, action, comments.trim() || undefined, rejectionReason.trim() || undefined)
       setComments("")
+      setRejectionReason("")
     } finally {
       setIsSubmitting(false)
     }
@@ -183,42 +208,50 @@ export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: Adm
               <CardTitle>Archivos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Programa detallado</p>
-                      <p className="text-sm text-muted-foreground">programa-evento.pdf</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-1" />
-                    Descargar
-                  </Button>
+              {loadingFiles ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <span className="ml-2 text-sm text-muted-foreground">Cargando archivos...</span>
                 </div>
+              ) : eventFiles.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No se han subido archivos para este evento</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {eventFiles.map((file) => {
+                    const handleDownload = async () => {
+                      try {
+                        const signedUrl = await createSignedUrl(file.id)
+                        if (signedUrl) {
+                          window.open(signedUrl, '_blank')
+                        }
+                      } catch (error) {
+                        console.error('Error downloading file:', error)
+                      }
+                    }
 
-                {event.cvFiles.length > 0 && (
-                  <div>
-                    <p className="font-medium mb-2">CVs de ponentes ({event.cvFiles.length})</p>
-                    {event.cvFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    return (
+                      <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-primary" />
+                          <span className="text-lg">{getFileIcon(file.type)}</span>
                           <div>
                             <p className="font-medium">{file.name}</p>
-                            <p className="text-sm text-muted-foreground">{file.type}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatFileSize(file.size)} • {file.type}
+                            </p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={handleDownload}>
                           <Download className="h-4 w-4 mr-1" />
                           Descargar
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -242,15 +275,30 @@ export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: Adm
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="comments">Comentarios</Label>
+                  <Label htmlFor="comments">Comentarios (opcional)</Label>
                   <Textarea
                     id="comments"
-                    placeholder="Agrega comentarios sobre la revisión (requerido para rechazar)"
+                    placeholder="Agrega comentarios adicionales sobre la revisión"
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                     className="mt-1"
-                    rows={4}
+                    rows={3}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="rejectionReason">Motivo de rechazo</Label>
+                  <Textarea
+                    id="rejectionReason"
+                    placeholder="Especifica el motivo del rechazo (requerido para rechazar)"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="mt-1"
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Este campo es requerido al rechazar un evento
+                  </p>
                 </div>
 
                 <div className="flex gap-3">

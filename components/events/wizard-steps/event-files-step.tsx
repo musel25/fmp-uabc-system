@@ -2,76 +2,125 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, FileText, X } from "lucide-react"
-import type { CreateEventData } from "@/lib/types"
+import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import type { CreateEventData, EventFile } from "@/lib/types"
+import { validateFile, formatFileSize, getFileIcon } from "@/lib/supabase-files"
+import { useToast } from "@/hooks/use-toast"
 
 interface EventFilesStepProps {
   form: UseFormReturn<CreateEventData>
+  eventId?: string
+  onFilesChange?: (files: { programFile: File | null; cvFiles: File[] }) => void
 }
 
-export function EventFilesStep({ form }: EventFilesStepProps) {
+export function EventFilesStep({ form, eventId, onFilesChange }: EventFilesStepProps) {
   const [programFile, setProgramFile] = useState<File | null>(null)
   const [cvFiles, setCvFiles] = useState<File[]>([])
+  const [uploadedFiles, setUploadedFiles] = useState<EventFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({})
+  const { toast } = useToast()
+
+  // Notify parent component of file changes
+  useEffect(() => {
+    onFilesChange?.({ programFile, cvFiles })
+  }, [programFile, cvFiles, onFilesChange])
 
   const handleProgramFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert("El archivo no puede ser mayor a 10 MB")
-        return
-      }
-      if (
-        !["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(
-          file.type,
-        )
-      ) {
-        alert("Solo se permiten archivos PDF y DOCX")
+      const validation = validateFile(file)
+      if (!validation.isValid) {
+        toast({
+          title: "Error de validación",
+          description: validation.error,
+          variant: "destructive",
+        })
         return
       }
       setProgramFile(file)
+      toast({
+        title: "Archivo seleccionado",
+        description: `${file.name} listo para subir`,
+      })
     }
   }
 
   const handleCvFilesUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
-    const validFiles = files.filter((file) => {
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`El archivo ${file.name} es muy grande (máximo 10 MB)`)
-        return false
+    const validFiles: File[] = []
+    const errors: string[] = []
+
+    files.forEach((file) => {
+      const validation = validateFile(file)
+      if (!validation.isValid) {
+        errors.push(`${file.name}: ${validation.error}`)
+      } else {
+        validFiles.push(file)
       }
-      if (
-        !["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(
-          file.type,
-        )
-      ) {
-        alert(`El archivo ${file.name} no es válido (solo PDF y DOCX)`)
-        return false
-      }
-      return true
     })
 
+    if (errors.length > 0) {
+      toast({
+        title: "Algunos archivos no son válidos",
+        description: errors.join(", "),
+        variant: "destructive",
+      })
+    }
+
     if (cvFiles.length + validFiles.length > 5) {
-      alert("Máximo 5 archivos de CV permitidos")
+      toast({
+        title: "Límite excedido",
+        description: "Máximo 5 archivos de CV permitidos",
+        variant: "destructive",
+      })
       return
     }
 
-    setCvFiles([...cvFiles, ...validFiles])
+    if (validFiles.length > 0) {
+      setCvFiles([...cvFiles, ...validFiles])
+      toast({
+        title: "Archivos seleccionados",
+        description: `${validFiles.length} archivo(s) listo(s) para subir`,
+      })
+    }
   }
 
   const removeCvFile = (index: number) => {
     setCvFiles(cvFiles.filter((_, i) => i !== index))
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  const getUploadStatus = (fileName: string) => {
+    const progress = uploadProgress[fileName]
+    if (progress === undefined) return null
+    if (progress === 100) return 'completed'
+    if (progress > 0) return 'uploading'
+    return 'pending'
+  }
+
+  const renderFileStatus = (fileName: string) => {
+    const status = getUploadStatus(fileName)
+    const progress = uploadProgress[fileName] || 0
+
+    switch (status) {
+      case 'uploading':
+        return (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">{progress}%</span>
+          </div>
+        )
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'pending':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />
+      default:
+        return null
+    }
   }
 
   return (
@@ -107,11 +156,12 @@ export function EventFilesStep({ form }: EventFilesStepProps) {
           <Card>
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center space-x-3">
-                <FileText className="h-8 w-8 text-primary" />
+                <span className="text-2xl">{getFileIcon(programFile.type)}</span>
                 <div>
                   <p className="font-medium">{programFile.name}</p>
                   <p className="text-sm text-muted-foreground">{formatFileSize(programFile.size)}</p>
                 </div>
+                {renderFileStatus(programFile.name)}
               </div>
               <Button variant="ghost" size="sm" onClick={() => setProgramFile(null)}>
                 <X className="h-4 w-4" />
@@ -156,11 +206,12 @@ export function EventFilesStep({ form }: EventFilesStepProps) {
               <Card key={index}>
                 <CardContent className="flex items-center justify-between p-3">
                   <div className="flex items-center space-x-3">
-                    <FileText className="h-6 w-6 text-primary" />
+                    <span className="text-lg">{getFileIcon(file.type)}</span>
                     <div>
                       <p className="text-sm font-medium">{file.name}</p>
                       <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                     </div>
+                    {renderFileStatus(file.name)}
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removeCvFile(index)}>
                     <X className="h-4 w-4" />

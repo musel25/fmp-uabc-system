@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation"
 import { ProtectedRoute } from "@/components/layout/protected-route"
 import { Navbar } from "@/components/layout/navbar"
 import { EventWizard } from "@/components/events/event-wizard"
-import { getEventById, updateEvent } from "@/lib/mock-events"
+import { getEventById, updateEvent, submitEventForReview } from "@/lib/supabase-database"
+import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { Event, CreateEventData } from "@/lib/types"
 
@@ -17,52 +18,91 @@ export default function EditEventPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const eventId = params.id as string
-    const foundEvent = getEventById(eventId)
+    const loadEvent = async () => {
+      try {
+        setIsLoading(true)
+        const eventId = params.id as string
+        
+        // Check authentication first
+        const user = await getAuthUser()
+        if (!user) {
+          router.push("/login")
+          return
+        }
 
-    if (foundEvent) {
-      // Check if user can edit this event
-      if (foundEvent.status !== "borrador" && foundEvent.status !== "rechazado") {
+        // Load event from database
+        const foundEvent = await getEventById(eventId)
+
+        if (foundEvent) {
+          // Check if user owns this event
+          if (foundEvent.userId !== user.id) {
+            toast({
+              title: "Acceso denegado",
+              description: "No tienes permisos para editar este evento",
+              variant: "destructive",
+            })
+            router.push("/dashboard")
+            return
+          }
+
+          // Check if user can edit this event (status-wise)
+          if (foundEvent.status !== "borrador" && foundEvent.status !== "rechazado") {
+            toast({
+              title: "No se puede editar",
+              description: "Solo puedes editar eventos en borrador o rechazados",
+              variant: "destructive",
+            })
+            router.push(`/events/${eventId}`)
+            return
+          }
+          
+          setEvent(foundEvent)
+        } else {
+          toast({
+            title: "Evento no encontrado",
+            description: "El evento que buscas no existe",
+            variant: "destructive",
+          })
+          router.push("/dashboard")
+        }
+      } catch (error) {
+        console.error('Load event error:', error)
         toast({
-          title: "No se puede editar",
-          description: "Solo puedes editar eventos en borrador o rechazados",
+          title: "Error",
+          description: "No se pudo cargar el evento",
           variant: "destructive",
         })
-        router.push(`/events/${eventId}`)
-        return
+        router.push("/dashboard")
+      } finally {
+        setIsLoading(false)
       }
-      setEvent(foundEvent)
-    } else {
-      toast({
-        title: "Evento no encontrado",
-        description: "El evento que buscas no existe o no tienes permisos para editarlo",
-        variant: "destructive",
-      })
-      router.push("/dashboard")
     }
-    setIsLoading(false)
+
+    loadEvent()
   }, [params.id, router, toast])
 
   const handleUpdateEvent = async (data: CreateEventData, isDraft = false) => {
     if (!event) return
 
     try {
-      const updatedEvent = updateEvent(event.id, {
-        ...data,
-        status: isDraft ? "borrador" : "en_revision",
+      // Update event with new data
+      let updatedEvent = await updateEvent(event.id, data)
+      
+      // If not a draft, also submit for review
+      if (!isDraft) {
+        updatedEvent = await submitEventForReview(event.id)
+      }
+
+      toast({
+        title: isDraft ? "Cambios guardados" : "Evento enviado a revisión",
+        description: isDraft
+          ? "Los cambios se han guardado como borrador"
+          : "Tu evento ha sido enviado para revisión administrativa",
       })
 
-      if (updatedEvent) {
-        toast({
-          title: isDraft ? "Cambios guardados" : "Evento enviado a revisión",
-          description: isDraft
-            ? "Los cambios se han guardado como borrador"
-            : "Tu evento ha sido enviado para revisión administrativa",
-        })
-
-        router.push(`/events/${event.id}`)
-      }
+      router.push(`/events/${event.id}`)
     } catch (error) {
+      console.error('Update event error:', error)
       toast({
         title: "Error",
         description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",

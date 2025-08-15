@@ -34,13 +34,15 @@ const eventSchema = z.object({
 })
 
 interface EventWizardProps {
-  onSubmit: (data: CreateEventData, isDraft?: boolean) => void
+  onSubmit: (data: CreateEventData, files: { programFile: File | null; cvFiles: File[] }, isDraft?: boolean) => void
   initialData?: Partial<CreateEventData>
+  eventId?: string
 }
 
-export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
+export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [files, setFiles] = useState<{ programFile: File | null; cvFiles: File[] }>({ programFile: null, cvFiles: [] })
 
   const form = useForm<CreateEventData>({
     resolver: zodResolver(eventSchema),
@@ -85,7 +87,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     setIsSubmitting(true)
     try {
       const data = form.getValues()
-      await onSubmit(data, isDraft)
+      await onSubmit(data, files, isDraft)
     } finally {
       setIsSubmitting(false)
     }
@@ -96,7 +98,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       case 1:
         return <EventDataStep form={form} />
       case 2:
-        return <EventFilesStep form={form} />
+        return <EventFilesStep form={form} eventId={eventId} onFilesChange={setFiles} />
       case 3:
         return <EventReviewStep form={form} />
       default:

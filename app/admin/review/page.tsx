@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { AdminEventReviewDrawer } from "@/components/admin/admin-event-review-drawer"
-import { Calendar, Filter, Eye } from "lucide-react"
-import { mockEvents, updateEventStatus } from "@/lib/mock-events"
+import { Calendar, Filter, Eye, Loader2 } from "lucide-react"
+import { getEventsForReview, getAllEvents, approveEvent, rejectEvent } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
 
@@ -22,6 +22,8 @@ export default function AdminReviewPage() {
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     program: "",
     status: "en_revision",
@@ -32,9 +34,40 @@ export default function AdminReviewPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Load all events for admin review
-    setEvents(mockEvents)
-  }, [])
+    const loadEvents = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // Load events based on filter status
+        let eventsData: Event[]
+        if (filters.status === "en_revision") {
+          eventsData = await getEventsForReview()
+        } else {
+          const result = await getAllEvents(1, 100, {
+            status: filters.status === "all" ? undefined : filters.status,
+            program: filters.program === "all_programs" ? undefined : filters.program,
+            search: filters.search
+          })
+          eventsData = result.events
+        }
+
+        setEvents(eventsData)
+      } catch (error) {
+        console.error('Load events error:', error)
+        setError('Error al cargar los eventos')
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los eventos",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadEvents()
+  }, [filters.status, filters.program, filters.search, toast])
 
   useEffect(() => {
     // Apply filters
@@ -74,11 +107,24 @@ export default function AdminReviewPage() {
     setIsDrawerOpen(true)
   }
 
-  const handleEventReview = async (eventId: string, action: "approve" | "reject", comments?: string) => {
-    const status = action === "approve" ? "aprobado" : "rechazado"
-    const updatedEvent = updateEventStatus(eventId, status, comments)
+  const handleEventReview = async (eventId: string, action: "approve" | "reject", comments?: string, rejectionReason?: string) => {
+    try {
+      let updatedEvent: Event
+      
+      if (action === "approve") {
+        updatedEvent = await approveEvent(eventId, comments)
+      } else {
+        if (!rejectionReason?.trim()) {
+          toast({
+            title: "Error",
+            description: "El motivo de rechazo es requerido",
+            variant: "destructive",
+          })
+          return
+        }
+        updatedEvent = await rejectEvent(eventId, rejectionReason, comments)
+      }
 
-    if (updatedEvent) {
       // Update local state
       setEvents((prev) => prev.map((event) => (event.id === eventId ? updatedEvent : event)))
 
@@ -89,6 +135,13 @@ export default function AdminReviewPage() {
 
       setIsDrawerOpen(false)
       setSelectedEvent(null)
+    } catch (error) {
+      console.error('Event review error:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo procesar la revisión del evento",
+        variant: "destructive",
+      })
     }
   }
 
@@ -216,7 +269,23 @@ export default function AdminReviewPage() {
               <CardTitle>Eventos para Revisión</CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredEvents.length === 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Cargando eventos...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <Calendar className="h-12 w-12 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar eventos</h3>
+                  <p className="text-muted-foreground mb-6">{error}</p>
+                  <Button onClick={() => window.location.reload()} variant="outline">
+                    Intentar de nuevo
+                  </Button>
+                </div>
+              ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">No hay eventos para mostrar</h3>

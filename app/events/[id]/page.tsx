@@ -11,7 +11,8 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { EventTimeline } from "@/components/events/event-timeline"
 import { CertificateRequestDialog } from "@/components/events/certificate-request-dialog"
 import { Calendar, MapPin, Users, FileText, Download, Award, Edit, ArrowLeft } from "lucide-react"
-import { getEventById, updateEvent } from "@/lib/mock-events"
+import { getEventById, requestCertificates } from "@/lib/supabase-database"
+import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
 
@@ -24,20 +25,56 @@ export default function EventDetailPage() {
   const [isCertificateDialogOpen, setIsCertificateDialogOpen] = useState(false)
 
   useEffect(() => {
-    const eventId = params.id as string
-    const foundEvent = getEventById(eventId)
+    const loadEvent = async () => {
+      try {
+        setIsLoading(true)
+        const eventId = params.id as string
+        
+        // Check authentication first
+        const user = await getAuthUser()
+        if (!user) {
+          router.push("/login")
+          return
+        }
 
-    if (foundEvent) {
-      setEvent(foundEvent)
-    } else {
-      toast({
-        title: "Evento no encontrado",
-        description: "El evento que buscas no existe o no tienes permisos para verlo",
-        variant: "destructive",
-      })
-      router.push("/dashboard")
+        // Load event from database
+        const foundEvent = await getEventById(eventId)
+
+        if (foundEvent) {
+          // Check if user owns this event (for security)
+          if (foundEvent.userId !== user.id && user.role !== 'admin') {
+            toast({
+              title: "Acceso denegado",
+              description: "No tienes permisos para ver este evento",
+              variant: "destructive",
+            })
+            router.push("/dashboard")
+            return
+          }
+          
+          setEvent(foundEvent)
+        } else {
+          toast({
+            title: "Evento no encontrado",
+            description: "El evento que buscas no existe",
+            variant: "destructive",
+          })
+          router.push("/dashboard")
+        }
+      } catch (error) {
+        console.error('Load event error:', error)
+        toast({
+          title: "Error",
+          description: "No se pudo cargar el evento",
+          variant: "destructive",
+        })
+        router.push("/dashboard")
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setIsLoading(false)
+
+    loadEvent()
   }, [params.id, router, toast])
 
   const handleDownloadTemplate = () => {
@@ -51,17 +88,21 @@ export default function EventDetailPage() {
   const handleCertificateRequest = async (requestData: any) => {
     if (!event) return
 
-    const updatedEvent = updateEvent(event.id, {
-      certificateStatus: "solicitadas",
-    })
-
-    if (updatedEvent) {
+    try {
+      const updatedEvent = await requestCertificates(event.id, requestData)
       setEvent(updatedEvent)
       toast({
         title: "Solicitud enviada",
         description: "Tu solicitud de constancias ha sido enviada para revisión",
       })
       setIsCertificateDialogOpen(false)
+    } catch (error) {
+      console.error('Certificate request error:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la solicitud de constancias",
+        variant: "destructive",
+      })
     }
   }
 

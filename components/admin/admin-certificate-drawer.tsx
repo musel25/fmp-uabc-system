@@ -1,21 +1,48 @@
 "use client"
 
+import React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Award, Calendar, Users, FileText, Download, ImageIcon, MessageSquare } from "lucide-react"
-import type { Event } from "@/lib/types"
+import type { Event, EventFile } from "@/lib/types"
+import { getEventFiles, createSignedUrl, formatFileSize, getFileIcon } from "@/lib/supabase-files"
 
 interface AdminCertificateDrawerProps {
-  event: Event | null
+  request: any | null
   isOpen: boolean
   onClose: () => void
-  onMarkAsIssued: (eventId: string) => void
+  onApproveCertificates: (requestId: string) => void
 }
 
-export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued }: AdminCertificateDrawerProps) {
-  if (!event) return null
+export function AdminCertificateDrawer({ request, isOpen, onClose, onApproveCertificates }: AdminCertificateDrawerProps) {
+  const [eventFiles, setEventFiles] = React.useState<EventFile[]>([])
+  const [loadingFiles, setLoadingFiles] = React.useState(false)
+
+  // Load event files when request changes
+  React.useEffect(() => {
+    const loadEventFiles = async () => {
+      if (!request?.events?.id) return
+      
+      setLoadingFiles(true)
+      try {
+        const files = await getEventFiles(request.events.id)
+        setEventFiles(files)
+      } catch (error) {
+        console.error('Error loading event files:', error)
+      } finally {
+        setLoadingFiles(false)
+      }
+    }
+
+    loadEventFiles()
+  }, [request?.events?.id])
+
+  if (!request) return null
+
+  const event = request.events
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("es-MX", {
@@ -26,20 +53,11 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
     })
   }
 
-  // Mock certificate request data
-  const certificateRequest = {
-    attendanceList: "lista-asistencia-evento.pdf",
-    photos: ["foto1.jpg", "foto2.jpg", "foto3.jpg"],
-    summary:
-      "El evento se desarrolló exitosamente con la participación de 45 asistentes. Se cubrieron todos los temas programados y se recibió retroalimentación muy positiva de los participantes. Los ponentes cumplieron con el programa establecido y se logró el objetivo de capacitación planteado.",
-    speakers: [
-      { name: "Dr. María González", role: "Ponente Principal" },
-      { name: "Dr. Carlos Ruiz", role: "Moderador" },
-    ],
-    committee: [
-      { name: "Lic. Ana Martínez", role: "Coordinadora" },
-      { name: "Mtro. Luis Pérez", role: "Logística" },
-    ],
+  // Certificate request data from database
+  const certificateData = {
+    summary: request.event_summary || "Información del evento no disponible",
+    speakers: request.speakers || [],
+    committee: request.committee || [],
   }
 
   return (
@@ -85,57 +103,59 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
           {/* Certificate Request Evidence */}
           {event.certificateStatus !== "sin_solicitar" && (
             <>
-              {/* Attendance List */}
+              {/* Event Files */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="h-5 w-5" />
-                    Lista de Asistencia
+                    Archivos del Evento
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{certificateRequest.attendanceList}</p>
-                        <p className="text-sm text-muted-foreground">Lista oficial de asistentes</p>
-                      </div>
+                  {loadingFiles ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2 text-sm text-muted-foreground">Cargando archivos...</span>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      Descargar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  ) : eventFiles.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No se han subido archivos para este evento</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {eventFiles.map((file) => {
+                        const handleDownload = async () => {
+                          try {
+                            const signedUrl = await createSignedUrl(file.id)
+                            if (signedUrl) {
+                              window.open(signedUrl, '_blank')
+                            }
+                          } catch (error) {
+                            console.error('Error downloading file:', error)
+                          }
+                        }
 
-              {/* Photos */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <ImageIcon className="h-5 w-5" />
-                    Fotografías del Evento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {certificateRequest.photos.map((photo, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <ImageIcon className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-medium">{photo}</p>
-                            <p className="text-sm text-muted-foreground">Fotografía {index + 1}</p>
+                        return (
+                          <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{getFileIcon(file.type)}</span>
+                              <div>
+                                <p className="font-medium">{file.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatFileSize(file.size)} • {file.type}
+                                </p>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={handleDownload}>
+                              <Download className="h-4 w-4 mr-1" />
+                              Descargar
+                            </Button>
                           </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          Ver
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -148,9 +168,9 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm leading-relaxed">{certificateRequest.summary}</p>
+                  <p className="text-sm leading-relaxed">{certificateData.summary}</p>
                   <div className="mt-3 text-xs text-muted-foreground">
-                    {certificateRequest.summary.length}/250 palabras
+                    {certificateData.summary.length} caracteres
                   </div>
                 </CardContent>
               </Card>
@@ -165,16 +185,20 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {certificateRequest.speakers.map((speaker, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">{speaker.name}</p>
-                            <p className="text-sm text-muted-foreground">{speaker.role}</p>
+                    {certificateData.speakers.length > 0 ? (
+                      <div className="space-y-3">
+                        {certificateData.speakers.map((speaker, index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">{speaker.name || `Ponente ${index + 1}`}</p>
+                              <p className="text-sm text-muted-foreground">{speaker.role || 'Ponente'}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No se especificaron ponentes</p>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -186,22 +210,54 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {certificateRequest.committee.map((member, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">{member.name}</p>
-                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                    {certificateData.committee.length > 0 ? (
+                      <div className="space-y-3">
+                        {certificateData.committee.map((member, index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">{member.name || `Miembro ${index + 1}`}</p>
+                              <p className="text-sm text-muted-foreground">{member.role || 'Comité'}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No se especificó comité organizador</p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
+              {/* Participant List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Lista de Participantes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Total de participantes: {Array.isArray(request.participant_list) ? request.participant_list.length : 0}
+                    </p>
+                    {Array.isArray(request.participant_list) && request.participant_list.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto space-y-2">
+                        {request.participant_list.map((participant: any, index: number) => (
+                          <div key={index} className="p-3 border rounded-lg">
+                            <p className="font-medium">{participant.name || `Participante ${index + 1}`}</p>
+                            {participant.email && (
+                              <p className="text-sm text-muted-foreground">{participant.email}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No se proporcionó lista de participantes</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Action Buttons */}
-              {event.certificateStatus === "solicitadas" && (
+              {request.status === "pending" && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Acciones</CardTitle>
@@ -209,25 +265,24 @@ export function AdminCertificateDrawer({ event, isOpen, onClose, onMarkAsIssued 
                   <CardContent>
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Revisa toda la evidencia proporcionada y marca las constancias como emitidas cuando estén
-                        listas.
+                        Revisa la información proporcionada y aprueba las constancias para marcarlas como emitidas.
                       </p>
-                      <Button onClick={() => onMarkAsIssued(event.id)} className="btn-primary w-full">
+                      <Button onClick={() => onApproveCertificates(request.id)} className="btn-primary w-full">
                         <Award className="h-4 w-4 mr-2" />
-                        Marcar como Emitidas
+                        Aprobar y Marcar como Emitidas
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {event.certificateStatus === "emitidas" && (
+              {request.status === "approved" && (
                 <Card>
                   <CardContent className="p-6 text-center">
                     <Award className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Constancias Emitidas</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Constancias Aprobadas</h3>
                     <p className="text-muted-foreground">
-                      Las constancias de este evento han sido marcadas como emitidas exitosamente.
+                      Las constancias de este evento han sido aprobadas y marcadas como emitidas.
                     </p>
                   </CardContent>
                 </Card>

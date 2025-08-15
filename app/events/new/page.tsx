@@ -3,7 +3,9 @@ import { useRouter } from "next/navigation"
 import { ProtectedRoute } from "@/components/layout/protected-route"
 import { Navbar } from "@/components/layout/navbar"
 import { EventWizard } from "@/components/events/event-wizard"
-import { createEvent } from "@/lib/mock-events"
+import { createEvent, submitEventForReview } from "@/lib/supabase-database"
+import { getAuthUser } from "@/lib/supabase-auth"
+import { uploadFile, uploadMultipleFiles } from "@/lib/supabase-files"
 import { useToast } from "@/hooks/use-toast"
 import type { CreateEventData } from "@/lib/types"
 
@@ -11,25 +13,55 @@ export default function NewEventPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleCreateEvent = async (data: CreateEventData, isDraft = false) => {
+  const handleCreateEvent = async (
+    data: CreateEventData, 
+    files: { programFile: File | null; cvFiles: File[] }, 
+    isDraft = false
+  ) => {
     try {
-      // Get current user
-      const userData = localStorage.getItem("fmp-user")
-      if (!userData) {
+      // Get current authenticated user
+      const user = await getAuthUser()
+      if (!user) {
         router.push("/login")
         return
       }
 
-      const user = JSON.parse(userData)
+      // Create event in database first
+      const newEvent = await createEvent(data, user.id)
 
-      // Create event with user ID
-      const eventData = {
-        ...data,
-        userId: user.id,
-        status: isDraft ? "borrador" : "en_revision",
+      // Upload files if any
+      const uploadErrors: string[] = []
+      
+      // Upload program file
+      if (files.programFile) {
+        const result = await uploadFile(files.programFile, newEvent.id, 'program')
+        if (!result.success) {
+          uploadErrors.push(`Programa: ${result.error}`)
+        }
+      }
+      
+      // Upload CV files
+      if (files.cvFiles.length > 0) {
+        const result = await uploadMultipleFiles(files.cvFiles, newEvent.id, 'cv')
+        if (!result.success && result.errors) {
+          uploadErrors.push(...result.errors)
+        }
       }
 
-      const newEvent = createEvent(eventData)
+      // Show upload warnings if any
+      if (uploadErrors.length > 0) {
+        toast({
+          title: "Algunos archivos no se pudieron subir",
+          description: uploadErrors.join(", "),
+          variant: "destructive",
+        })
+      }
+
+      // If not a draft, submit for review
+      let finalEvent = newEvent
+      if (!isDraft) {
+        finalEvent = await submitEventForReview(newEvent.id)
+      }
 
       toast({
         title: isDraft ? "Borrador guardado" : "Evento enviado a revisión",
@@ -38,8 +70,9 @@ export default function NewEventPage() {
           : "Tu evento ha sido enviado para revisión administrativa",
       })
 
-      router.push(`/events/${newEvent.id}`)
+      router.push(`/events/${finalEvent.id}`)
     } catch (error) {
+      console.error('Create event error:', error)
       toast({
         title: "Error",
         description: "No se pudo crear el evento. Inténtalo de nuevo.",
