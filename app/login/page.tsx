@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,12 +19,27 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+
+  // Check for error messages in URL parameters
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error) {
+      toast({
+        title: "Error de autenticación",
+        description: error,
+        variant: "destructive",
+      })
+    }
+  }, [searchParams, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     try {
       if (isSignUp) {
@@ -97,28 +112,31 @@ export default function LoginPage() {
           let errorDescription = "Email o contraseña incorrectos"
           
           // Handle specific error types - check both message and error string
-          const errorMessage = error.message || error.toString() || ''
+          const errorMessage = error.message || error.toString() || JSON.stringify(error) || ''
           
-          if (errorMessage.includes("Invalid login credentials") || errorMessage.includes("invalid_credentials")) {
+          // Normalize the error message to lowercase for easier matching
+          const normalizedError = errorMessage.toLowerCase()
+          
+          if (normalizedError.includes("invalid login credentials") || normalizedError.includes("invalid_credentials")) {
             errorTitle = "Credenciales incorrectas"
             errorDescription = "El email o la contraseña son incorrectos. Verifica tus datos."
-          } else if (errorMessage.includes("Email not confirmed") || errorMessage.includes("email_not_confirmed")) {
+          } else if (normalizedError.includes("email not confirmed") || normalizedError.includes("email_not_confirmed")) {
             errorTitle = "Email no confirmado"
             errorDescription = "Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
-          } else if (errorMessage.includes("User not found") || errorMessage.includes("user_not_found")) {
+          } else if (normalizedError.includes("user not found") || normalizedError.includes("user_not_found")) {
             errorTitle = "Usuario no encontrado"
             errorDescription = "No existe una cuenta con este email. ¿Necesitas crear una cuenta?"
-          } else if (errorMessage.includes("Too many requests") || errorMessage.includes("rate_limit")) {
+          } else if (normalizedError.includes("too many requests") || normalizedError.includes("rate limit")) {
             errorTitle = "Demasiados intentos"
             errorDescription = "Has hecho demasiados intentos de inicio de sesión. Espera unos minutos e intenta de nuevo."
-          } else if (errorMessage.includes("Invalid email") || errorMessage.includes("invalid_email")) {
+          } else if (normalizedError.includes("invalid email") || normalizedError.includes("invalid_email")) {
             errorTitle = "Email inválido"
             errorDescription = "El formato del email no es válido."
-          } else if (errorMessage.includes("Password") || errorMessage.includes("password")) {
+          } else if (normalizedError.includes("password")) {
             errorTitle = "Error de contraseña"
             errorDescription = "La contraseña es incorrecta. Inténtalo de nuevo."
-          } else if (errorMessage) {
-            // Use the original error message for other cases
+          } else if (errorMessage && errorMessage !== '[object Object]') {
+            // Use the original error message for other cases (avoid showing [object Object])
             errorDescription = `Error de autenticación: ${errorMessage}`
           }
           
@@ -168,12 +186,8 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      console.error('Auth error:', error)
-      toast({
-        title: "Error",
-        description: "Ocurrió un error inesperado",
-        variant: "destructive",
-      })
+      const errorMessage = (error as Error).message || "Ocurrió un error inesperado"
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -185,7 +199,7 @@ export default function LoginPage() {
     }}>
       <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
-          <Logo className="justify-center" />
+          <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
           <div>
             <CardTitle className="text-2xl font-bold text-foreground-strong">
               {isSignUp ? "Crear Cuenta" : "Iniciar Sesión"}
@@ -210,6 +224,11 @@ export default function LoginPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">

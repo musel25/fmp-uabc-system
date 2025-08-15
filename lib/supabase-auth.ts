@@ -41,22 +41,14 @@ export async function signUp(email: string, password: string, name: string) {
 
 // Sign in user
 export async function signIn(email: string, password: string) {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
 
-    if (error) {
-      console.error('Supabase auth error:', error)
-      return { user: null, error }
-    }
+  if (error) throw error
 
-    return { user: data.user, error: null }
-  } catch (error) {
-    console.error('Sign in error:', error)
-    return { user: null, error }
-  }
+  return { user: data.user, error: null }
 }
 
 // Sign out user

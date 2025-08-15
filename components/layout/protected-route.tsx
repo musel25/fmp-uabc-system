@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getAuthUser, onAuthStateChange } from "@/lib/supabase-auth"
 import type { AuthUser } from "@/lib/supabase-auth"
+import { useToast } from "@/hooks/use-toast"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -16,6 +17,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     let mounted = true
@@ -27,7 +29,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
         if (!mounted) return
 
         if (!authUser) {
-          router.push("/login")
+          router.push("/login?error=Debes iniciar sesión para acceder a esta página")
           return
         }
 
@@ -57,7 +59,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
       if (!mounted) return
 
       if (!supabaseUser) {
-        router.push("/login")
+        router.push("/login?error=Debes iniciar sesión para acceder a esta página")
         return
       }
 
