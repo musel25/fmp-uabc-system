@@ -33,6 +33,7 @@ export function Navbar({ showAdminToggle = false }: NavbarProps) {
       const authUser = await getAuthUser()
       if (authUser) {
         setUser(authUser)
+        setIsAdminMode(window.location.pathname.startsWith("/admin"))
       }
     }
     loadUser()
@@ -56,15 +57,18 @@ export function Navbar({ showAdminToggle = false }: NavbarProps) {
   }
 
   const toggleAdminMode = () => {
-    setIsAdminMode(!isAdminMode)
-    if (!isAdminMode) {
+    const newIsAdminMode = !isAdminMode
+    setIsAdminMode(newIsAdminMode)
+    if (newIsAdminMode) {
       router.push("/admin/review")
     } else {
       router.push("/dashboard")
     }
     toast({
-      title: isAdminMode ? "Modo Usuario" : "Modo Administrador",
-      description: isAdminMode ? "Cambiaste a vista de usuario" : "Cambiaste a vista de administrador",
+      title: newIsAdminMode ? "Modo Administrador" : "Modo Usuario",
+      description: newIsAdminMode
+        ? "Cambiaste a vista de administrador"
+        : "Cambiaste a vista de usuario",
     })
   }
 
