@@ -47,169 +47,267 @@
 
 ---
 
-## 🚀 Backend Integration Plan
+## 🚀 Backend Integration Action Plan (Supabase)
 
-### Phase 1: API Infrastructure Setup
-**Timeline: 1-2 weeks**
+### Step 1: Supabase Project Setup
 
-1. **Choose Backend Technology**
-   - Option A: Next.js API Routes (same codebase)
-   - Option B: Separate Node.js/Express API
-   - Option C: Python/Django REST API
-   - **Recommendation**: Next.js API Routes for simplicity
+**Actions:**
+1. Create new Supabase project at https://supabase.com
+2. Install Supabase dependencies:
+   ```bash
+   npm install @supabase/supabase-js @supabase/auth-helpers-nextjs
+   ```
+3. Create environment variables in `.env.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
+4. Create `lib/supabase.ts` client configuration
 
-2. **Database Setup**
-   - **Users Table**: id, email, password_hash, name, role, created_at, updated_at
-   - **Events Table**: All current Event fields from `types.ts`
-   - **Files Table**: id, event_id, file_name, file_path, file_type, size, uploaded_at
-   - **Certificate_Requests Table**: id, event_id, user_id, participant_list, status, requested_at
+### Step 2: Database Schema Creation
 
-3. **Authentication & Security**
-   - Replace localStorage with JWT tokens
-   - Implement password hashing (bcrypt)
-   - Add session management
-   - CORS configuration
-   - Input validation middleware
+**Actions:**
+1. Create tables in Supabase SQL Editor:
 
-### Phase 2: Core API Endpoints
-**Timeline: 2-3 weeks**
+```sql
+-- Users table (extends Supabase auth.users)
+CREATE TABLE public.profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (id)
+);
 
-#### Authentication Endpoints
+-- Events table
+CREATE TABLE public.events (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  responsible TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  program TEXT NOT NULL CHECK (program IN ('Médico', 'Psicología', 'Nutrición', 'Posgrado')),
+  type TEXT NOT NULL CHECK (type IN ('Académico', 'Cultural', 'Deportivo', 'Salud')),
+  classification TEXT NOT NULL CHECK (classification IN ('Conferencia', 'Seminario', 'Taller', 'Otro')),
+  classification_other TEXT,
+  modality TEXT NOT NULL CHECK (modality IN ('Presencial', 'En línea', 'Mixta')),
+  venue TEXT NOT NULL,
+  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  has_cost BOOLEAN NOT NULL DEFAULT FALSE,
+  cost_details TEXT,
+  online_info TEXT,
+  organizers TEXT NOT NULL,
+  observations TEXT,
+  status TEXT NOT NULL DEFAULT 'borrador' CHECK (status IN ('borrador', 'en_revision', 'aprobado', 'rechazado')),
+  certificate_status TEXT NOT NULL DEFAULT 'sin_solicitar' CHECK (certificate_status IN ('sin_solicitar', 'solicitadas', 'emitidas')),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  admin_comments TEXT,
+  rejection_reason TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Event files table
+CREATE TABLE public.event_files (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE NOT NULL,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Certificate requests table
+CREATE TABLE public.certificate_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE NOT NULL,
+  participant_list JSONB NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  processed_at TIMESTAMP WITH TIME ZONE
+);
 ```
-POST /api/auth/login
-POST /api/auth/logout
-POST /api/auth/register
-GET  /api/auth/me
-POST /api/auth/refresh
-```
 
-#### Event Management Endpoints
-```
-GET    /api/events           # List events (with filters)
-POST   /api/events           # Create event
-GET    /api/events/:id       # Get specific event
-PUT    /api/events/:id       # Update event
-DELETE /api/events/:id       # Delete event
-POST   /api/events/:id/submit # Submit for review
-```
+2. Set up Row Level Security (RLS) policies
+3. Create database functions for triggers (updated_at)
 
-#### Admin Endpoints
-```
-GET  /api/admin/events/review    # Events pending review
-POST /api/admin/events/:id/approve
-POST /api/admin/events/:id/reject
-GET  /api/admin/certificates     # Certificate requests
-POST /api/admin/certificates/:id/approve
-```
+### Step 3: Authentication Integration
 
-#### File Upload Endpoints
-```
-POST /api/upload/program/:eventId
-POST /api/upload/cv/:eventId
-GET  /api/files/:fileId
-```
+**Actions:**
+1. Replace `lib/auth.ts` with Supabase auth:
+   - Remove localStorage-based auth
+   - Add Supabase auth functions
+   - Implement sign in/sign up/sign out
+   - Add profile creation trigger
 
-### Phase 3: Frontend API Integration
-**Timeline: 2-3 weeks**
+2. Update `components/layout/protected-route.tsx`:
+   - Use Supabase auth state
+   - Handle loading and error states
+   - Redirect based on auth status
 
-1. **Create API Client Layer**
-   - Create `lib/api.ts` with fetch wrappers
-   - Add error handling and loading states
-   - Implement request/response interceptors
+3. Update login page (`app/login/page.tsx`):
+   - Use Supabase auth methods
+   - Add proper error handling
+   - Remove mock authentication
 
-2. **Replace Mock Functions**
-   - Update `lib/auth.ts` to use real API calls
-   - Replace `lib/mock-events.ts` with API calls
-   - Add proper error boundaries
+### Step 4: Event Management Integration
 
-3. **Update Components**
-   - Add loading states to all forms
-   - Implement proper error handling
-   - Add optimistic UI updates where appropriate
+**Actions:**
+1. Create `lib/database.ts` with Supabase queries:
+   - CRUD operations for events
+   - Search and filtering functions
+   - Status update functions
+   - User-specific queries
 
-### Phase 4: File Upload & Storage
-**Timeline: 1-2 weeks**
+2. Replace `lib/mock-events.ts` imports throughout the app:
+   - Update all components using mock data
+   - Add proper loading states
+   - Implement error handling
 
-1. **File Storage Options**
-   - Option A: Local file system
-   - Option B: Cloud storage (AWS S3, Google Cloud)
-   - **Recommendation**: Start with local, migrate to cloud later
+3. Update event forms to save to database:
+   - Event creation wizard
+   - Event editing functionality
+   - Status updates (submit for review, etc.)
 
-2. **Implementation**
-   - Multipart form data handling
-   - File type validation
-   - Size limits and compression
-   - Secure file serving
+### Step 5: File Upload Implementation
 
-### Phase 5: Advanced Features
-**Timeline: 2-3 weeks**
+**Actions:**
+1. Configure Supabase Storage:
+   - Create storage bucket for event files
+   - Set up storage policies
+   - Configure file type restrictions
 
-1. **Email Notifications**
-   - Event status changes
-   - Certificate availability
-   - Admin notifications
+2. Create file upload utilities:
+   - File validation functions
+   - Upload progress tracking
+   - Error handling for uploads
 
-2. **PDF Generation**
-   - Certificate generation
-   - Event reports
-   - Attendance lists
+3. Update file upload components:
+   - Program file uploads
+   - CV file uploads
+   - File preview and deletion
 
-3. **Search & Analytics**
-   - Full-text search implementation
-   - Event analytics dashboard
-   - Export functionality
+### Step 6: Admin Panel Integration
+
+**Actions:**
+1. Create admin-specific database queries:
+   - Events pending review
+   - Certificate requests
+   - Analytics and statistics
+
+2. Update admin components:
+   - Event review interface
+   - Certificate management
+   - Bulk operations
+
+### Step 7: Real-time Features (Optional)
+
+**Actions:**
+1. Implement Supabase realtime subscriptions:
+   - Live event status updates
+   - Real-time notifications
+   - Admin dashboard updates
+
+### Step 8: Migration and Cleanup
+
+**Actions:**
+1. Create data migration script:
+   - Convert mock data to database format
+   - Seed initial admin users
+   - Import sample events
+
+2. Remove mock dependencies:
+   - Delete `lib/mock-events.ts`
+   - Clean up unused mock functions
+   - Update imports throughout app
+
+3. Add proper error boundaries and loading states
 
 ---
 
-## 🔄 Migration Strategy
+## ✅ Ready-to-Execute Task Checklist
 
-### Step 1: Incremental Migration
-- Keep mock system as fallback
-- Add feature flags to toggle between mock/real API
-- Migrate one feature at a time (auth → events → files)
+### 🏗️ **Setup Phase**
+- [ ] Create Supabase project
+- [ ] Install dependencies: `@supabase/supabase-js @supabase/auth-helpers-nextjs`
+- [ ] Add environment variables to `.env.local`
+- [ ] Create `lib/supabase.ts` client configuration
 
-### Step 2: Data Migration
-- Create seed scripts for initial data
-- Export existing mock data structure
-- Validate data integrity
+### 🗄️ **Database Phase**
+- [ ] Run SQL schema creation in Supabase SQL Editor
+- [ ] Set up Row Level Security policies
+- [ ] Create updated_at trigger functions
+- [ ] Test database connection
 
-### Step 3: Testing Strategy
-- Unit tests for API endpoints
-- Integration tests for workflows
-- E2E tests for critical user journeys
+### 🔐 **Authentication Phase**
+- [ ] Create new `lib/supabase-auth.ts` with auth functions
+- [ ] Update `components/layout/protected-route.tsx` for Supabase auth
+- [ ] Modify `app/login/page.tsx` to use Supabase auth
+- [ ] Add profile creation trigger
+- [ ] Test login/logout functionality
+
+### 📝 **Events Phase**
+- [ ] Create `lib/supabase-database.ts` with event queries
+- [ ] Update event creation wizard to save to database
+- [ ] Update event listing pages to fetch from database
+- [ ] Update event detail pages to fetch from database
+- [ ] Replace all `mock-events.ts` imports
+- [ ] Add loading states to event components
+
+### 📁 **File Upload Phase**
+- [ ] Create Supabase storage bucket for files
+- [ ] Set up storage policies
+- [ ] Create file upload utilities in `lib/file-upload.ts`
+- [ ] Update event wizard file upload steps
+- [ ] Add file preview and deletion functionality
+
+### 👥 **Admin Phase**
+- [ ] Create admin database queries
+- [ ] Update admin review interface to use real data
+- [ ] Update certificate management interface
+- [ ] Add admin-only route protection
+
+### 🧹 **Cleanup Phase**
+- [ ] Delete `lib/mock-events.ts`
+- [ ] Remove all mock-related imports
+- [ ] Add comprehensive error handling
+- [ ] Create data migration script for existing mock data
+- [ ] Test all workflows end-to-end
 
 ---
 
-## 📋 Immediate Next Steps
+## 🔧 Implementation Notes
 
-1. **Choose Backend Technology** (Decision needed)
-2. **Set up development database** 
-3. **Create basic API structure**
-4. **Implement authentication endpoints**
-5. **Update login page to use real API**
+### Supabase Configuration
+```typescript
+// lib/supabase.ts
+import { createClient } from '@supabase/supabase-js'
 
----
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-## 🔧 Technical Considerations
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+```
 
-### Performance
-- Implement pagination for event lists
-- Add caching layer (Redis)
-- Optimize database queries
-- Image/file optimization
+### Row Level Security Policies
+- Users can only see their own events
+- Admins can see all events
+- Public read access for approved events (if needed)
+- File access restricted to event owners and admins
 
-### Security
-- Input sanitization
-- SQL injection prevention
-- XSS protection
-- Rate limiting
-- File upload security
-
-### Scalability
-- Database indexing strategy
-- API rate limiting
-- CDN for static files
-- Monitoring and logging
+### Database Indexing
+```sql
+-- Add indexes for better performance
+CREATE INDEX events_user_id_idx ON events(user_id);
+CREATE INDEX events_status_idx ON events(status);
+CREATE INDEX events_created_at_idx ON events(created_at);
+CREATE INDEX event_files_event_id_idx ON event_files(event_id);
+```
 
 ---
 
