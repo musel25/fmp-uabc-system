@@ -12,18 +12,11 @@ interface EventTimelineProps {
 export function EventTimeline({ event, className = "" }: EventTimelineProps) {
   const steps = [
     {
-      id: "borrador",
-      title: "Borrador",
-      description: "Evento creado",
-      icon: FileText,
-      status: "completed",
-    },
-    {
       id: "en_revision",
       title: "En revisión",
       description: "Revisión administrativa",
       icon: Clock,
-      status: event.status === "borrador" ? "pending" : "completed",
+      status: "completed",
     },
     {
       id: "decision",

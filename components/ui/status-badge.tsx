@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Check, Clock, X, FileText } from "lucide-react"
 
-type EventStatus = "borrador" | "en_revision" | "aprobado" | "rechazado"
+type EventStatus = "en_revision" | "aprobado" | "rechazado"
 type CertificateStatus = "sin_solicitar" | "solicitadas" | "emitidas"
 
 interface StatusBadgeProps {
@@ -11,11 +11,6 @@ interface StatusBadgeProps {
 
 const statusConfig = {
   // Event statuses
-  borrador: {
-    label: "Borrador",
-    icon: FileText,
-    className: "chip-borrador",
-  },
   en_revision: {
     label: "En revisión",
     icon: Clock,

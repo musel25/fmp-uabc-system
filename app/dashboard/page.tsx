@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Plus, Calendar, MapPin, Eye, Edit, Loader2 } from "lucide-react"
+import { Plus, Calendar, MapPin, Eye, Edit, Loader2, ExternalLink, Award, Building, FileSpreadsheet } from "lucide-react"
 import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
@@ -62,8 +62,6 @@ export default function DashboardPage() {
 
   const getFilteredEvents = () => {
     switch (activeTab) {
-      case "borrador":
-        return filterEventsByStatus("borrador")
       case "revision":
         return filterEventsByStatus("en_revision")
       case "aprobado":
@@ -71,7 +69,7 @@ export default function DashboardPage() {
       case "rechazado":
         return filterEventsByStatus("rechazado")
       default:
-        return events
+        return events.filter(event => event.status !== "borrador")
     }
   }
 
@@ -118,9 +116,8 @@ export default function DashboardPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="todos">Todos ({events.length})</TabsTrigger>
-              <TabsTrigger value="borrador">Borrador ({filterEventsByStatus("borrador").length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="todos">Todos ({events.filter(event => event.status !== "borrador").length})</TabsTrigger>
               <TabsTrigger value="revision">En revisión ({filterEventsByStatus("en_revision").length})</TabsTrigger>
               <TabsTrigger value="aprobado">Aprobado ({filterEventsByStatus("aprobado").length})</TabsTrigger>
               <TabsTrigger value="rechazado">Rechazado ({filterEventsByStatus("rechazado").length})</TabsTrigger>
@@ -178,26 +175,64 @@ export default function DashboardPage() {
                             </Badge>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/events/${event.id}`)}
-                            className="flex-1"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                          {(event.status === "borrador" || event.status === "rechazado") && (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => router.push(`/events/${event.id}/edit`)}
+                              onClick={() => router.push(`/events/${event.id}`)}
                               className="flex-1"
                             >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
                             </Button>
+                            {event.status === "rechazado" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/events/${event.id}/edit`)}
+                                className="flex-1"
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            )}
+                          </div>
+                          
+                          {event.status === "aprobado" && (
+                            <div className="space-y-1">
+                              <Button 
+                                onClick={() => window.open('https://forms.gle/Dy5Kxns3DxijYzfh6', '_blank')}
+                                size="sm"
+                                className="btn-primary w-full"
+                              >
+                                <Award className="h-3 w-3 mr-1" />
+                                Generar constancias
+                                <ExternalLink className="h-2 w-2 ml-1" />
+                              </Button>
+                              <div className="flex gap-1">
+                                <Button 
+                                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  <Building className="h-3 w-3 mr-1" />
+                                  Reservar
+                                  <ExternalLink className="h-2 w-2 ml-1" />
+                                </Button>
+                                <Button 
+                                  onClick={() => window.open('https://docs.google.com/presentation/d/1jOYJ2OPRA_KgVFCYFG4gb9DIryGcAMX-/edit?usp=sharing&ouid=100348146339426668698&rtpof=true&sd=true', '_blank')}
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  <FileSpreadsheet className="h-3 w-3 mr-1" />
+                                  Template
+                                  <ExternalLink className="h-2 w-2 ml-1" />
+                                </Button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </CardContent>

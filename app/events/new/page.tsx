@@ -33,7 +33,7 @@ export default function NewEventPage() {
       toast({
         title: isDraft ? "Borrador guardado" : "Evento enviado a revisión",
         description: isDraft
-          ? "Tu evento se ha guardado como borrador"
+          ? "Tu evento se ha guardado"
           : "Tu evento ha sido enviado para revisión administrativa",
       })
 

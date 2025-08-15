@@ -212,7 +212,6 @@ export default function AdminReviewPage() {
                       <SelectItem value="en_revision">En revisión</SelectItem>
                       <SelectItem value="aprobado">Aprobado</SelectItem>
                       <SelectItem value="rechazado">Rechazado</SelectItem>
-                      <SelectItem value="borrador">Borrador</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

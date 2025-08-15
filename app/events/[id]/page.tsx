@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { EventTimeline } from "@/components/events/event-timeline"
 import { CertificateRequestDialog } from "@/components/events/certificate-request-dialog"
-import { Calendar, MapPin, Users, FileText, Download, Award, Edit, ArrowLeft } from "lucide-react"
+import { Calendar, MapPin, Users, FileText, Download, Award, Edit, ArrowLeft, ExternalLink, Building, FileSpreadsheet } from "lucide-react"
 import { getEventById, requestCertificates } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
@@ -138,7 +138,7 @@ export default function EventDetailPage() {
     })
   }
 
-  const canEdit = event.status === "borrador" || event.status === "rechazado"
+  const canEdit = event.status === "rechazado"
   const canDownloadTemplate = event.status === "aprobado"
   const canRequestCertificates = event.status === "aprobado" && event.certificateStatus === "sin_solicitar"
 
@@ -328,6 +328,39 @@ export default function EventDetailPage() {
                       <Download className="h-4 w-4 mr-2" />
                       Descargar plantilla
                     </Button>
+                  )}
+
+                  {event.status === "aprobado" && (
+                    <>
+                      <Button 
+                        onClick={() => window.open('https://forms.gle/Dy5Kxns3DxijYzfh6', '_blank')}
+                        className="btn-primary w-full"
+                      >
+                        <Award className="h-4 w-4 mr-2" />
+                        Generar constancias
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+
+                      <Button 
+                        onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        <Building className="h-4 w-4 mr-2" />
+                        Reservar espacio
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+
+                      <Button 
+                        onClick={() => window.open('https://docs.google.com/presentation/d/1jOYJ2OPRA_KgVFCYFG4gb9DIryGcAMX-/edit?usp=sharing&ouid=100348146339426668698&rtpof=true&sd=true', '_blank')}
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Template para difusión
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    </>
                   )}
 
                   {canRequestCertificates && (

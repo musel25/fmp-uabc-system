@@ -286,7 +286,6 @@ export async function getAdminStatistics() {
     // Calculate statistics
     const total = eventStats.length
     const byStatus = {
-      borrador: eventStats.filter((e) => e.status === 'borrador').length,
       en_revision: eventStats.filter((e) => e.status === 'en_revision').length,
       aprobado: eventStats.filter((e) => e.status === 'aprobado').length,
       rechazado: eventStats.filter((e) => e.status === 'rechazado').length,

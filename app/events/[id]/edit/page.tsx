@@ -46,10 +46,10 @@ export default function EditEventPage() {
           }
 
           // Check if user can edit this event (status-wise)
-          if (foundEvent.status !== "borrador" && foundEvent.status !== "rechazado") {
+          if (foundEvent.status !== "rechazado") {
             toast({
               title: "No se puede editar",
-              description: "Solo puedes editar eventos en borrador o rechazados",
+              description: "Solo puedes editar eventos rechazados",
               variant: "destructive",
             })
             router.push(`/events/${eventId}`)
@@ -96,7 +96,7 @@ export default function EditEventPage() {
       toast({
         title: isDraft ? "Cambios guardados" : "Evento enviado a revisión",
         description: isDraft
-          ? "Los cambios se han guardado como borrador"
+          ? "Los cambios se han guardado"
           : "Tu evento ha sido enviado para revisión administrativa",
       })
 

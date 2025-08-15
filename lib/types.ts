@@ -1,4 +1,4 @@
-export type EventStatus = "borrador" | "en_revision" | "aprobado" | "rechazado"
+export type EventStatus = "en_revision" | "aprobado" | "rechazado"
 export type CertificateStatus = "sin_solicitar" | "solicitadas" | "emitidas"
 export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado"
 export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"

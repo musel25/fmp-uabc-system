@@ -57,7 +57,7 @@ function eventToDbRow(event: CreateEventData, userId: string) {
     program_details: event.programDetails,
     speaker_cvs: event.speakerCvs,
     user_id: userId,
-    status: 'borrador' as EventStatus,
+    status: 'en_revision' as EventStatus,
     certificate_status: 'sin_solicitar' as CertificateStatus
   }
 }
@@ -278,7 +278,6 @@ export async function getEventStatistics(userId?: string) {
 
     const total = data.length
     const byStatus = {
-      borrador: data.filter((e) => e.status === 'borrador').length,
       en_revision: data.filter((e) => e.status === 'en_revision').length,
       aprobado: data.filter((e) => e.status === 'aprobado').length,
       rechazado: data.filter((e) => e.status === 'rechazado').length,

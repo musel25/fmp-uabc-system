@@ -182,7 +182,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
         <div className="flex gap-2">
           {currentStep === 3 && (
             <Button type="button" variant="outline" onClick={() => handleSubmit(true)} disabled={isSubmitting}>
-              Guardar borrador
+              Guardar
             </Button>
           )}
 
