@@ -357,46 +357,37 @@ export default function EventDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Files */}
+              {/* Program Details */}
               <Card className="card-uabc">
                 <CardHeader>
-                  <CardTitle>Archivos</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Programa Detallado
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium">Programa detallado</p>
-                        <p className="text-xs text-muted-foreground">programa-evento.pdf</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <Download className="h-4 w-4" />
-                    </Button>
+                <CardContent>
+                  <div className="whitespace-pre-wrap text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
+                    {event.programDetails || "No se proporcionó programa detallado"}
                   </div>
-
-                  {event.cvFiles.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">CVs de ponentes</p>
-                      {event.cvFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg mb-2">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4 text-primary" />
-                            <div>
-                              <p className="text-sm font-medium">{file.name}</p>
-                              <p className="text-xs text-muted-foreground">{file.type}</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
+
+              {/* Speaker CVs */}
+              {event.speakerCvs && (
+                <Card className="card-uabc">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      CVs de Ponentes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="whitespace-pre-wrap text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
+                      {event.speakerCvs}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Event Stats */}
               <Card className="card-uabc">

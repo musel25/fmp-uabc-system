@@ -149,24 +149,37 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
         </Card>
       )}
 
-      {/* Files Summary */}
+      {/* Program Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Archivos</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Programa Detallado
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
-              <span className="text-sm">Programa detallado: Pendiente de subir</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">CVs de ponentes: Opcionales</span>
-            </div>
+          <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+            {data.programDetails || "No se proporcionó programa detallado"}
           </div>
         </CardContent>
       </Card>
+
+      {/* Speaker CVs */}
+      {data.speakerCvs && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              CVs de Ponentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {data.speakerCvs}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Important Notice */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">

@@ -5,13 +5,6 @@ export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"
 export type EventClassification = "Conferencia" | "Seminario" | "Taller" | "Otro"
 export type EventModality = "Presencial" | "En línea" | "Mixta"
 
-export interface EventFile {
-  id: string
-  name: string
-  size: number
-  type: string
-  url: string
-}
 
 export interface Event {
   id: string
@@ -32,8 +25,8 @@ export interface Event {
   onlineInfo?: string
   organizers: string
   observations?: string
-  programFile?: EventFile
-  cvFiles: EventFile[]
+  programDetails: string
+  speakerCvs: string
   status: EventStatus
   certificateStatus: CertificateStatus
   createdAt: string
@@ -61,4 +54,6 @@ export interface CreateEventData {
   onlineInfo?: string
   organizers: string
   observations?: string
+  programDetails: string
+  speakerCvs: string
 }

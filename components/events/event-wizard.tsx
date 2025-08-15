@@ -7,6 +7,7 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { Form } from "@/components/ui/form"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { EventDataStep } from "./wizard-steps/event-data-step"
 import { EventFilesStep } from "./wizard-steps/event-files-step"
@@ -31,18 +32,18 @@ const eventSchema = z.object({
   onlineInfo: z.string().optional(),
   organizers: z.string().min(1, "Los organizadores son requeridos"),
   observations: z.string().optional(),
+  programDetails: z.string().min(1, "El programa detallado es requerido"),
+  speakerCvs: z.string().optional(),
 })
 
 interface EventWizardProps {
-  onSubmit: (data: CreateEventData, files: { programFile: File | null; cvFiles: File[] }, isDraft?: boolean) => void
+  onSubmit: (data: CreateEventData, isDraft?: boolean) => void
   initialData?: Partial<CreateEventData>
-  eventId?: string
 }
 
-export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps) {
+export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [files, setFiles] = useState<{ programFile: File | null; cvFiles: File[] }>({ programFile: null, cvFiles: [] })
 
   const form = useForm<CreateEventData>({
     resolver: zodResolver(eventSchema),
@@ -60,20 +61,42 @@ export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps
       endDate: "",
       hasCost: false,
       organizers: "",
+      programDetails: "",
+      speakerCvs: "",
       ...initialData,
     },
   })
 
   const steps = [
     { number: 1, title: "Datos del Evento", description: "Información básica" },
-    { number: 2, title: "Programa y Archivos", description: "Documentos requeridos" },
+    { number: 2, title: "Programa y Ponentes", description: "Detalles del evento" },
     { number: 3, title: "Revisión", description: "Confirmar información" },
   ]
 
   const handleNext = async () => {
-    const isValid = await form.trigger()
-    if (isValid && currentStep < 3) {
-      setCurrentStep(currentStep + 1)
+    // For step 1, validate basic event fields
+    if (currentStep === 1) {
+      const fieldsToValidate: (keyof CreateEventData)[] = [
+        'name', 'responsible', 'email', 'phone', 'program', 
+        'type', 'classification', 'modality', 'venue', 
+        'startDate', 'endDate', 'organizers'
+      ]
+      
+      const isValid = await form.trigger(fieldsToValidate)
+      console.log('Step 1 validation:', isValid, 'Errors:', form.formState.errors)
+      
+      if (isValid) {
+        setCurrentStep(2)
+      }
+    }
+    // For step 2, validate program details
+    else if (currentStep === 2) {
+      const isValid = await form.trigger(['programDetails'])
+      console.log('Step 2 validation:', isValid, 'Errors:', form.formState.errors)
+      
+      if (isValid) {
+        setCurrentStep(3)
+      }
     }
   }
 
@@ -87,7 +110,7 @@ export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps
     setIsSubmitting(true)
     try {
       const data = form.getValues()
-      await onSubmit(data, files, isDraft)
+      await onSubmit(data, isDraft)
     } finally {
       setIsSubmitting(false)
     }
@@ -98,7 +121,7 @@ export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps
       case 1:
         return <EventDataStep form={form} />
       case 2:
-        return <EventFilesStep form={form} eventId={eventId} onFilesChange={setFiles} />
+        return <EventFilesStep form={form} />
       case 3:
         return <EventReviewStep form={form} />
       default:
@@ -143,7 +166,9 @@ export function EventWizard({ onSubmit, initialData, eventId }: EventWizardProps
           <CardTitle>{steps[currentStep - 1].title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6">{renderStep()}</form>
+          <Form {...form}>
+            <form className="space-y-6">{renderStep()}</form>
+          </Form>
         </CardContent>
       </Card>
 

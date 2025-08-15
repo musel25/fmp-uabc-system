@@ -29,8 +29,8 @@ function dbRowToEvent(row: any): Event {
     rejectionReason: row.rejection_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    cvFiles: [], // Will be loaded separately
-    programFile: undefined // Will be loaded separately
+    programDetails: row.program_details || '',
+    speakerCvs: row.speaker_cvs || ''
   }
 }
 
@@ -54,6 +54,8 @@ function eventToDbRow(event: CreateEventData, userId: string) {
     online_info: event.onlineInfo,
     organizers: event.organizers,
     observations: event.observations,
+    program_details: event.programDetails,
+    speaker_cvs: event.speakerCvs,
     user_id: userId,
     status: 'borrador' as EventStatus,
     certificate_status: 'sin_solicitar' as CertificateStatus
