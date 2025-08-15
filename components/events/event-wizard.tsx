@@ -24,7 +24,7 @@ const eventSchema = z.object({
   classification: z.enum(["Conferencia", "Seminario", "Taller", "Otro"]),
   classificationOther: z.string().optional(),
   modality: z.enum(["Presencial", "En línea", "Mixta"]),
-  venue: z.string().min(1, "La sede es requerida"),
+  venue: z.string(),
   startDate: z.string().min(1, "La fecha de inicio es requerida"),
   endDate: z.string().min(1, "La fecha de fin es requerida"),
   hasCost: z.boolean(),
@@ -32,8 +32,17 @@ const eventSchema = z.object({
   onlineInfo: z.string().optional(),
   organizers: z.string().min(1, "Los organizadores son requeridos"),
   observations: z.string().optional(),
-  programDetails: z.string().min(1, "El programa detallado es requerido"),
+  programDetails: z.string().min(1, "La descripción del evento es requerida"),
   speakerCvs: z.string().optional(),
+}).refine((data) => {
+  // Venue is required only if modality is not "En línea"
+  if (data.modality !== "En línea" && (!data.venue || data.venue.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "La sede es requerida para eventos presenciales y mixtos",
+  path: ["venue"]
 })
 
 interface EventWizardProps {

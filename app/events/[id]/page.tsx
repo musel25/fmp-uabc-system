@@ -395,12 +395,12 @@ export default function EventDetailPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5" />
-                    Programa Detallado
+                    Descripción del evento
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="whitespace-pre-wrap text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                    {event.programDetails || "No se proporcionó programa detallado"}
+                    {event.programDetails || "No se proporcionó descripción del evento"}
                   </div>
                 </CardContent>
               </Card>
@@ -411,7 +411,7 @@ export default function EventDetailPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="h-5 w-5" />
-                      CVs de Ponentes
+                      Semblanza curricular de ponentes
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

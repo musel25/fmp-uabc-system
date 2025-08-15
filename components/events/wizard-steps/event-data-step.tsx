@@ -25,6 +25,14 @@ export function EventDataStep({ form }: EventDataStepProps) {
   const watchHasCost = watch("hasCost")
   const watchModality = watch("modality")
 
+  // Clear venue when modality changes to "En línea"
+  const handleModalityChange = (value: string) => {
+    setValue("modality", value as any)
+    if (value === "En línea") {
+      setValue("venue", "")
+    }
+  }
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="md:col-span-2">
@@ -123,7 +131,7 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
       <div>
         <Label htmlFor="modality">Modalidad *</Label>
-        <Select onValueChange={(value) => setValue("modality", value as any)} defaultValue={watch("modality")}>
+        <Select onValueChange={handleModalityChange} defaultValue={watch("modality")}>
           <SelectTrigger className="mt-1">
             <SelectValue placeholder="Selecciona una modalidad" />
           </SelectTrigger>
@@ -136,8 +144,16 @@ export function EventDataStep({ form }: EventDataStepProps) {
       </div>
 
       <div>
-        <Label htmlFor="venue">Sede *</Label>
-        <Input id="venue" {...register("venue")} placeholder="Ej. Auditorio Principal FMP" className="mt-1" />
+        <Label htmlFor="venue">
+          Sede {watchModality !== "En línea" ? "*" : "(opcional)"}
+        </Label>
+        <Input 
+          id="venue" 
+          {...register("venue")} 
+          placeholder={watchModality === "En línea" ? "No requerida para eventos en línea" : "Ej. Auditorio Principal FMP"}
+          className="mt-1" 
+          disabled={watchModality === "En línea"}
+        />
         {errors.venue && <p className="text-sm text-destructive mt-1">{errors.venue.message}</p>}
       </div>
 

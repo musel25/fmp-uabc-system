@@ -184,12 +184,12 @@ export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: Adm
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <FileText className="h-5 w-5" />
-                Programa Detallado
+                Descripción del evento
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="whitespace-pre-wrap text-sm">
-                {event.programDetails || "No se proporcionó programa detallado"}
+                {event.programDetails || "No se proporcionó descripción del evento"}
               </div>
             </CardContent>
           </Card>
@@ -200,7 +200,7 @@ export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: Adm
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Users className="h-5 w-5" />
-                  CVs de Ponentes
+                  Semblanza curricular de ponentes
                 </CardTitle>
               </CardHeader>
               <CardContent>

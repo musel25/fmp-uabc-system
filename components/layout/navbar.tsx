@@ -118,15 +118,6 @@ export function Navbar({ showAdminToggle = false }: NavbarProps) {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => toast({ title: "Función no disponible" })}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span>Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast({ title: "Función no disponible" })}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span>Configuración</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar sesión</span>
