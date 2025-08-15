@@ -15,38 +15,44 @@ import { Badge } from "@/components/ui/badge"
 import { Logo } from "@/components/ui/logo"
 import { LogOut, Shield } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-interface NavbarUser {
-  id: string
-  name: string
-  email: string
-  role: "user" | "admin"
-}
+import { getAuthUser, signOut } from "@/lib/supabase-auth"
+import type { AuthUser } from "@/lib/supabase-auth"
 
 interface NavbarProps {
   showAdminToggle?: boolean
 }
 
 export function Navbar({ showAdminToggle = false }: NavbarProps) {
-  const [user, setUser] = useState<NavbarUser | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isAdminMode, setIsAdminMode] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    const userData = localStorage.getItem("fmp-user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    const loadUser = async () => {
+      const authUser = await getAuthUser()
+      if (authUser) {
+        setUser(authUser)
+      }
     }
+    loadUser()
   }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem("fmp-user")
-    toast({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión exitosamente",
-    })
-    router.push("/login")
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente",
+      })
+      router.push("/login")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión",
+        variant: "destructive",
+      })
+    }
   }
 
   const toggleAdminMode = () => {

@@ -4,13 +4,8 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: "user" | "admin"
-}
+import { getAuthUser, onAuthStateChange } from "@/lib/supabase-auth"
+import type { AuthUser } from "@/lib/supabase-auth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -18,27 +13,62 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const userData = localStorage.getItem("fmp-user")
+    let mounted = true
 
-    if (!userData) {
-      router.push("/login")
-      return
+    const checkAuth = async () => {
+      try {
+        const authUser = await getAuthUser()
+        
+        if (!mounted) return
+
+        if (!authUser) {
+          router.push("/login")
+          return
+        }
+
+        if (requireAdmin && authUser.role !== "admin") {
+          router.push("/dashboard")
+          return
+        }
+
+        setUser(authUser)
+      } catch (error) {
+        console.error('Auth check error:', error)
+        if (mounted) {
+          router.push("/login")
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
 
-    const parsedUser = JSON.parse(userData)
+    // Initial auth check
+    checkAuth()
 
-    if (requireAdmin && parsedUser.role !== "admin") {
-      router.push("/dashboard")
-      return
+    // Listen for auth state changes
+    const { data: { subscription } } = onAuthStateChange(async (supabaseUser) => {
+      if (!mounted) return
+
+      if (!supabaseUser) {
+        router.push("/login")
+        return
+      }
+
+      // Re-check auth when user state changes
+      checkAuth()
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
     }
-
-    setUser(parsedUser)
-    setIsLoading(false)
   }, [router, requireAdmin])
 
   if (isLoading) {

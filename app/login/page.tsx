@@ -10,11 +10,14 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Logo } from "@/components/ui/logo"
 import { useToast } from "@/hooks/use-toast"
+import { signIn, signUp, getAuthUser } from "@/lib/supabase-auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -22,41 +25,88 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate authentication delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      if (isSignUp) {
+        // Sign up new user
+        if (!name.trim()) {
+          toast({
+            title: "Error",
+            description: "Por favor, ingresa tu nombre completo",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
 
-    // Mock authentication logic
-    if (email && password) {
-      // Store user session in localStorage (mock)
-      const userData = {
-        email,
-        name: email.includes("admin") ? "Administrador FMP" : "Usuario FMP",
-        role: email.includes("admin") ? "admin" : "user",
-        id: Math.random().toString(36).substr(2, 9),
-      }
+        const { user, error } = await signUp(email, password, name)
+        
+        if (error) {
+          toast({
+            title: "Error de registro",
+            description: error.message || "Error al crear la cuenta",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
 
-      localStorage.setItem("fmp-user", JSON.stringify(userData))
+        toast({
+          title: "Cuenta creada",
+          description: "Revisa tu email para confirmar tu cuenta",
+        })
 
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: `Bienvenido, ${userData.name}`,
-      })
-
-      // Redirect based on role
-      if (userData.role === "admin") {
-        router.push("/admin/review")
+        // Switch to login mode
+        setIsSignUp(false)
+        setName("")
       } else {
-        router.push("/dashboard")
+        // Sign in existing user
+        const { user, error } = await signIn(email, password)
+        
+        if (error) {
+          toast({
+            title: "Error de autenticación",
+            description: error.message || "Email o contraseña incorrectos",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // Get complete user profile
+        const authUser = await getAuthUser()
+        
+        if (!authUser) {
+          toast({
+            title: "Error",
+            description: "No se pudo cargar el perfil de usuario",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
+
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: `Bienvenido, ${authUser.name}`,
+        })
+
+        // Redirect based on role
+        if (authUser.role === "admin") {
+          router.push("/admin/review")
+        } else {
+          router.push("/dashboard")
+        }
       }
-    } else {
+    } catch (error) {
+      console.error('Auth error:', error)
       toast({
-        title: "Error de autenticación",
-        description: "Por favor, ingresa tu email y contraseña",
+        title: "Error",
+        description: "Ocurrió un error inesperado",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   return (
@@ -65,12 +115,28 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-4">
           <Logo className="justify-center" />
           <div>
-            <CardTitle className="text-2xl font-bold text-foreground-strong">Iniciar Sesión</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground-strong">
+              {isSignUp ? "Crear Cuenta" : "Iniciar Sesión"}
+            </CardTitle>
             <CardDescription className="text-muted-foreground">Sistema de Registro y Constancias</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Nombre completo</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Tu nombre completo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input
@@ -92,33 +158,60 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 className="w-full"
               />
+              {isSignUp && (
+                <p className="text-xs text-muted-foreground">Mínimo 6 caracteres</p>
+              )}
             </div>
             <Button type="submit" className="w-full btn-primary" disabled={isLoading}>
-              {isLoading ? "Iniciando sesión..." : "Ingresar"}
+              {isLoading 
+                ? (isSignUp ? "Creando cuenta..." : "Iniciando sesión...") 
+                : (isSignUp ? "Crear Cuenta" : "Ingresar")
+              }
             </Button>
-            <div className="text-center">
+            
+            <div className="text-center space-y-2">
               <button
                 type="button"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                onClick={() =>
-                  toast({
-                    title: "Función no disponible",
-                    description: "Contacta al administrador del sistema",
-                  })
-                }
+                className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setName("")
+                  setEmail("")
+                  setPassword("")
+                }}
               >
-                ¿Olvidaste tu contraseña?
+                {isSignUp ? "¿Ya tienes cuenta? Iniciar sesión" : "¿No tienes cuenta? Crear cuenta"}
               </button>
+              
+              {!isSignUp && (
+                <div>
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() =>
+                      toast({
+                        title: "Función no disponible",
+                        description: "Contacta al administrador del sistema",
+                      })
+                    }
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+              )}
             </div>
           </form>
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground mb-2">Usuarios de prueba:</p>
-            <p className="text-xs text-muted-foreground">Usuario: user@uabc.edu.mx</p>
-            <p className="text-xs text-muted-foreground">Admin: admin@uabc.edu.mx</p>
-            <p className="text-xs text-muted-foreground">Contraseña: cualquiera</p>
-          </div>
+          
+          {!isSignUp && (
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-2">Para crear un administrador:</p>
+              <p className="text-xs text-muted-foreground">1. Crea una cuenta normal</p>
+              <p className="text-xs text-muted-foreground">2. Cambia el role a 'admin' en Supabase</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
