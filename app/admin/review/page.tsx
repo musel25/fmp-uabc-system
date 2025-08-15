@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { AdminEventReviewDrawer } from "@/components/admin/admin-event-review-drawer"
-import { Calendar, Filter, Eye, Loader2 } from "lucide-react"
+import { Calendar, Filter, Eye, Loader2, Download } from "lucide-react"
 import { getEventsForReview, getAllEvents, approveEvent, rejectEvent } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
@@ -153,15 +153,114 @@ export default function AdminReviewPage() {
     })
   }
 
+  const exportToCSV = async () => {
+    try {
+      toast({
+        title: "Exportando...",
+        description: "Preparando archivo CSV",
+      })
+
+      // Get all events from database
+      const result = await getAllEvents(1, 1000) // Get up to 1000 events
+      const allEvents = result.events
+
+      // Define CSV headers
+      const headers = [
+        "ID",
+        "Nombre del Evento",
+        "Responsable", 
+        "Email",
+        "Teléfono",
+        "Programa",
+        "Tipo",
+        "Clasificación",
+        "Modalidad",
+        "Sede",
+        "Fecha Inicio",
+        "Fecha Fin",
+        "Tiene Costo",
+        "Detalles Costo",
+        "Info Online",
+        "Organizadores",
+        "Observaciones",
+        "Estado",
+        "Estado Constancias",
+        "Comentarios Admin",
+        "Fecha Creación",
+        "Fecha Actualización"
+      ]
+
+      // Convert events to CSV rows
+      const csvRows = [
+        headers.join(","),
+        ...allEvents.map(event => [
+          event.id,
+          `"${event.name.replace(/"/g, '""')}"`,
+          `"${event.responsible.replace(/"/g, '""')}"`,
+          event.email,
+          event.phone,
+          event.program,
+          event.type,
+          event.classification,
+          event.modality,
+          `"${event.venue.replace(/"/g, '""')}"`,
+          event.startDate,
+          event.endDate,
+          event.hasCost ? "Sí" : "No",
+          event.costDetails ? `"${event.costDetails.replace(/"/g, '""')}"` : "",
+          event.onlineInfo ? `"${event.onlineInfo.replace(/"/g, '""')}"` : "",
+          `"${event.organizers.replace(/"/g, '""')}"`,
+          event.observations ? `"${event.observations.replace(/"/g, '""')}"` : "",
+          event.status,
+          event.certificateStatus,
+          event.adminComments ? `"${event.adminComments.replace(/"/g, '""')}"` : "",
+          event.createdAt,
+          event.updatedAt
+        ].join(","))
+      ]
+
+      // Create and download CSV file
+      const csvContent = csvRows.join("\n")
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute("href", url)
+      link.setAttribute("download", `eventos_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast({
+        title: "Exportación exitosa",
+        description: `Se exportaron ${allEvents.length} eventos a CSV`,
+      })
+    } catch (error) {
+      console.error("CSV export error:", error)
+      toast({
+        title: "Error en exportación",
+        description: "No se pudo exportar el archivo CSV",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <ProtectedRoute requireAdmin>
       <div className="min-h-screen bg-background">
         <Navbar showAdminToggle />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground-strong">Revisión de Eventos</h1>
-            <p className="text-muted-foreground mt-1">Revisa y aprueba eventos pendientes de autorización</p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground-strong">Revisión de Eventos</h1>
+              <p className="text-muted-foreground mt-1">Revisa y aprueba eventos pendientes de autorización</p>
+            </div>
+            <Button onClick={exportToCSV} className="btn-secondary mt-4 sm:mt-0">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
           </div>
 
           {/* Filters */}

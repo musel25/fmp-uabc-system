@@ -47,7 +47,10 @@ export async function signIn(email: string, password: string) {
       password
     })
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase auth error:', error)
+      return { user: null, error }
+    }
 
     return { user: data.user, error: null }
   } catch (error) {

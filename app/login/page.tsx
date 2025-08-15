@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -41,9 +42,32 @@ export default function LoginPage() {
         const { user, error } = await signUp(email, password, name)
         
         if (error) {
+          let errorTitle = "Error de registro"
+          let errorDescription = "Error al crear la cuenta"
+          
+          // Handle specific signup error types - check both message and error string
+          const errorMessage = error.message || error.toString() || ''
+          
+          if (errorMessage.includes("User already registered") || errorMessage.includes("already_registered")) {
+            errorTitle = "Email ya registrado"
+            errorDescription = "Ya existe una cuenta con este email. ¿Quieres iniciar sesión?"
+          } else if (errorMessage.includes("Password should be at least") || errorMessage.includes("password_too_short")) {
+            errorTitle = "Contraseña muy corta"
+            errorDescription = "La contraseña debe tener al menos 6 caracteres."
+          } else if (errorMessage.includes("Invalid email") || errorMessage.includes("invalid_email")) {
+            errorTitle = "Email inválido"
+            errorDescription = "El formato del email no es válido."
+          } else if (errorMessage.includes("Password") || errorMessage.includes("password")) {
+            errorTitle = "Error de contraseña"
+            errorDescription = "La contraseña no cumple con los requisitos de seguridad."
+          } else if (errorMessage) {
+            // Use the original error message for other cases
+            errorDescription = errorMessage
+          }
+          
           toast({
-            title: "Error de registro",
-            description: error.message || "Error al crear la cuenta",
+            title: errorTitle,
+            description: errorDescription,
             variant: "destructive",
           })
           setIsLoading(false)
@@ -51,21 +75,67 @@ export default function LoginPage() {
         }
 
         toast({
-          title: "Cuenta creada",
-          description: "Revisa tu email para confirmar tu cuenta",
+          title: "Cuenta creada exitosamente",
+          description: "Se ha enviado un email de confirmación a tu correo. Debes confirmar tu email antes de poder iniciar sesión.",
         })
 
-        // Switch to login mode
-        setIsSignUp(false)
-        setName("")
+        // Show confirmation message
+        setShowConfirmation(true)
+        
+        // Switch to login mode after a delay to allow user to see the message
+        setTimeout(() => {
+          setIsSignUp(false)
+          setShowConfirmation(false)
+          setName("")
+        }, 5000) // 5 second delay
       } else {
         // Sign in existing user
         const { user, error } = await signIn(email, password)
         
         if (error) {
+          let errorTitle = "Error de autenticación"
+          let errorDescription = "Email o contraseña incorrectos"
+          
+          // Handle specific error types - check both message and error string
+          const errorMessage = error.message || error.toString() || ''
+          
+          if (errorMessage.includes("Invalid login credentials") || errorMessage.includes("invalid_credentials")) {
+            errorTitle = "Credenciales incorrectas"
+            errorDescription = "El email o la contraseña son incorrectos. Verifica tus datos."
+          } else if (errorMessage.includes("Email not confirmed") || errorMessage.includes("email_not_confirmed")) {
+            errorTitle = "Email no confirmado"
+            errorDescription = "Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
+          } else if (errorMessage.includes("User not found") || errorMessage.includes("user_not_found")) {
+            errorTitle = "Usuario no encontrado"
+            errorDescription = "No existe una cuenta con este email. ¿Necesitas crear una cuenta?"
+          } else if (errorMessage.includes("Too many requests") || errorMessage.includes("rate_limit")) {
+            errorTitle = "Demasiados intentos"
+            errorDescription = "Has hecho demasiados intentos de inicio de sesión. Espera unos minutos e intenta de nuevo."
+          } else if (errorMessage.includes("Invalid email") || errorMessage.includes("invalid_email")) {
+            errorTitle = "Email inválido"
+            errorDescription = "El formato del email no es válido."
+          } else if (errorMessage.includes("Password") || errorMessage.includes("password")) {
+            errorTitle = "Error de contraseña"
+            errorDescription = "La contraseña es incorrecta. Inténtalo de nuevo."
+          } else if (errorMessage) {
+            // Use the original error message for other cases
+            errorDescription = `Error de autenticación: ${errorMessage}`
+          }
+          
+          toast({
+            title: errorTitle,
+            description: errorDescription,
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // Check if login was actually successful
+        if (!user) {
           toast({
             title: "Error de autenticación",
-            description: error.message || "Email o contraseña incorrectos",
+            description: "No se pudo iniciar sesión. Verifica tus credenciales.",
             variant: "destructive",
           })
           setIsLoading(false)
@@ -124,6 +194,24 @@ export default function LoginPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {showConfirmation && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">¡Cuenta creada exitosamente!</h3>
+                  <p className="mt-1 text-sm text-green-700">
+                    Se ha enviado un email de confirmación a <strong>{email}</strong>. 
+                    Debes confirmar tu email antes de poder iniciar sesión.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
@@ -180,6 +268,7 @@ export default function LoginPage() {
                 className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
                 onClick={() => {
                   setIsSignUp(!isSignUp)
+                  setShowConfirmation(false)
                   setName("")
                   setEmail("")
                   setPassword("")
