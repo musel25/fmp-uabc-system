@@ -9,7 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Plus, Calendar, MapPin, Eye, Edit, Loader2, ExternalLink, Award, Building, FileSpreadsheet } from "lucide-react"
+import { 
+  Plus, 
+  Calendar, 
+  MapPin, 
+  Eye, 
+  Edit, 
+  Loader2, 
+  ExternalLink, 
+  Award, 
+  Building, 
+  FileSpreadsheet 
+} from "lucide-react"
 import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
@@ -31,14 +42,12 @@ export default function DashboardPage() {
         setIsLoading(true)
         setError(null)
 
-        // Get current authenticated user
         const user = await getAuthUser()
         if (!user) {
           router.push("/login")
           return
         }
 
-        // Load user's events from database
         const userEvents = await getUserEvents(user.id)
         setEvents(userEvents)
       } catch (error) {
@@ -57,21 +66,15 @@ export default function DashboardPage() {
     loadEvents()
   }, [])
 
-  const filterEventsByStatus = (status?: EventStatus) => {
-    if (!status) return events
-    return events.filter((event) => event.status === status)
-  }
+  const filterEventsByStatus = (status?: EventStatus) => 
+    status ? events.filter(event => event.status === status) : events
 
   const getFilteredEvents = () => {
     switch (activeTab) {
-      case "revision":
-        return filterEventsByStatus("en_revision")
-      case "aprobado":
-        return filterEventsByStatus("aprobado")
-      case "rechazado":
-        return filterEventsByStatus("rechazado")
-      default:
-        return events.filter(event => event.status !== "borrador")
+      case "revision": return filterEventsByStatus("en_revision")
+      case "aprobado": return filterEventsByStatus("aprobado")
+      case "rechazado": return filterEventsByStatus("rechazado")
+      default: return events.filter(event => event.status !== "borrador")
     }
   }
 
@@ -105,7 +108,6 @@ export default function DashboardPage() {
         <Header />
         <Navbar showAdminToggle />
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground-strong">Mis Eventos</h1>
@@ -117,13 +119,20 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="todos">Todos ({events.filter(event => event.status !== "borrador").length})</TabsTrigger>
-              <TabsTrigger value="revision">En revisión ({filterEventsByStatus("en_revision").length})</TabsTrigger>
-              <TabsTrigger value="aprobado">Aprobado ({filterEventsByStatus("aprobado").length})</TabsTrigger>
-              <TabsTrigger value="rechazado">Rechazado ({filterEventsByStatus("rechazado").length})</TabsTrigger>
+              <TabsTrigger value="todos">
+                Todos ({events.filter(event => event.status !== "borrador").length})
+              </TabsTrigger>
+              <TabsTrigger value="revision">
+                En revisión ({filterEventsByStatus("en_revision").length})
+              </TabsTrigger>
+              <TabsTrigger value="aprobado">
+                Aprobado ({filterEventsByStatus("aprobado").length})
+              </TabsTrigger>
+              <TabsTrigger value="rechazado">
+                Rechazado ({filterEventsByStatus("rechazado").length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="flex-1 flex flex-col mt-6">

@@ -163,7 +163,7 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        to: 'muselemmanuel@hotmail.com',
+        to: 'serafin.idanya@uabc.edu.mx',
         subject: 'Códigos 8=1',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
