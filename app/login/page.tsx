@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { signIn, signUp, getAuthUser } from "@/lib/supabase-auth"
 import { Footer } from "@/components/layout/footer"
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
@@ -328,5 +328,44 @@ export default function LoginPage() {
       </div>
       <Footer />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col" style={{
+        background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
+      }}>
+        <div className="flex-1 flex flex-col justify-center p-4">
+          <div className="w-full space-y-12">
+            <div className="text-center text-white space-y-2 px-4 -mt-15">
+              <h1 className="text-2xl font-bold leading-tight">
+                Extensión de la cultura y divulgación de la ciencia
+              </h1>
+              <p className="text-white/90 text-sm">
+                Dra. Naysin Yaheko Pardo Buitimea
+              </p>
+            </div>
+            <div className="max-w-md mx-auto">
+              <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
+                <CardHeader className="text-center space-y-4">
+                  <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+                  <div>
+                    <CardTitle className="text-2xl font-bold text-foreground-strong">
+                      Cargando...
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">Sistema de Registro y Constancias</CardDescription>
+                  </div>
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

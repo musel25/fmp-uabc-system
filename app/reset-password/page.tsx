@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import { updateUserPassword } from "@/lib/supabase-auth"
 import Link from "next/link"
 import { Footer } from "@/components/layout/footer"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -79,5 +79,32 @@ export default function ResetPasswordPage() {
       </div>
       <Footer />
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col" style={{
+        background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
+      }}>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
+            <CardHeader className="text-center space-y-4">
+              <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+              <div>
+                <CardTitle className="text-2xl font-bold text-foreground-strong">
+                  Cargando...
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">Restablecer Contraseña</CardDescription>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
