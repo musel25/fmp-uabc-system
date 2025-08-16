@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Event, CreateEventData, EventStatus, CertificateStatus } from './types'
+import { sendNewEventNotification } from './email'
 
 // Convert database row to Event type (handle snake_case to camelCase)
 function dbRowToEvent(row: any): Event {
@@ -79,7 +80,40 @@ export async function createEvent(eventData: CreateEventData, userId: string): P
       throw error
     }
 
-    return dbRowToEvent(data)
+    const newEvent = dbRowToEvent(data)
+
+    // Send email notification to admin
+    try {
+      // Get user profile information for the email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', userId)
+        .single()
+
+      if (!profileError && profileData) {
+        await sendNewEventNotification({
+          eventName: newEvent.name,
+          userName: profileData.name,
+          userEmail: profileData.email,
+          eventId: newEvent.id
+        })
+      } else {
+        console.warn('Could not get user profile for email notification:', profileError)
+        // Send notification with limited info
+        await sendNewEventNotification({
+          eventName: newEvent.name,
+          userName: 'Usuario desconocido',
+          userEmail: eventData.email || 'No disponible',
+          eventId: newEvent.id
+        })
+      }
+    } catch (emailError) {
+      // Email failures should not prevent event creation
+      console.error('Failed to send email notification:', emailError)
+    }
+
+    return newEvent
   } catch (error) {
     console.error('Create event error:', error)
     console.error('Error details:', JSON.stringify(error, null, 2))

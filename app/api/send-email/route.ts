@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,33 +13,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // In production, you would integrate with a real email service here:
-    // - Resend: https://resend.com/
-    // - SendGrid: https://sendgrid.com/
-    // - AWS SES: https://aws.amazon.com/ses/
-    // - Postmark: https://postmarkapp.com/
+    // Check if Resend API key is configured
+    const resendApiKey = process.env.RESEND_API_KEY
     
-    // For development/demo purposes, we'll log the email instead of sending it
-    console.log('=== EMAIL NOTIFICATION ===')
-    console.log('To:', to)
-    console.log('Subject:', subject)
-    console.log('HTML Content:')
-    console.log(html)
-    console.log('Text Content:')
-    console.log(text)
-    console.log('========================')
+    if (!resendApiKey) {
+      console.log('=== EMAIL NOTIFICATION (RESEND API KEY NOT CONFIGURED) ===')
+      console.log('To:', to)
+      console.log('Subject:', subject)
+      console.log('HTML Content:')
+      console.log(html)
+      console.log('Text Content:')
+      console.log(text)
+      console.log('============================================================')
+      
+      return NextResponse.json(
+        { 
+          success: true, 
+          message: 'Email logged (Resend API key not configured)',
+          note: 'Add RESEND_API_KEY environment variable to send real emails'
+        },
+        { status: 200 }
+      )
+    }
 
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // In production, you would uncomment and configure one of these:
-    /*
-    // Example with Resend
-    import { Resend } from 'resend'
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    // Initialize Resend
+    const resend = new Resend(resendApiKey)
     
+    // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Sistema FMP <noreply@fmp.uabc.edu.mx>',
+      from: 'Sistema FMP <noreply@resend.dev>',
       to: [to],
       subject,
       html,
@@ -46,32 +49,17 @@ export async function POST(request: NextRequest) {
     })
     
     if (error) {
+      console.error('Resend error:', error)
       throw new Error(`Resend error: ${JSON.stringify(error)}`)
     }
-    */
 
-    /*
-    // Example with SendGrid
-    import sgMail from '@sendgrid/mail'
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
-    
-    const msg = {
-      to,
-      from: 'Sistema FMP <noreply@fmp.uabc.edu.mx>',
-      subject,
-      text,
-      html,
-    }
-    
-    await sgMail.send(msg)
-    */
+    console.log('Email sent successfully via Resend:', data?.id)
 
     return NextResponse.json(
       { 
         success: true, 
-        message: 'Email sent successfully',
-        // In development mode, we indicate it was logged instead of sent
-        note: 'Email logged to console (development mode)'
+        message: 'Email sent successfully via Resend',
+        emailId: data?.id
       },
       { status: 200 }
     )
