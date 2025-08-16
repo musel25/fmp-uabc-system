@@ -199,8 +199,8 @@ export default function AdminCertificatesPage() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{request.events.responsible}</p>
-                              <p className="text-sm text-muted-foreground">{request.events.profiles?.email}</p>
+                              <p className="font-medium">{request.events.profiles?.name || request.events.responsible || 'N/A'}</p>
+                              <p className="text-sm text-muted-foreground">{request.events.profiles?.email || 'N/A'}</p>
                             </div>
                           </TableCell>
                           <TableCell>

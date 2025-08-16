@@ -9,8 +9,8 @@ export type EventModality = "Presencial" | "En línea" | "Mixta"
 export interface Event {
   id: string
   name: string
-  responsible: string
-  email: string
+  responsible?: string
+  email?: string
   phone: string
   program: EventProgram
   type: EventType
@@ -27,6 +27,7 @@ export interface Event {
   observations?: string
   programDetails: string
   speakerCvs: string
+  codigosRequeridos: number
   status: EventStatus
   certificateStatus: CertificateStatus
   createdAt: string
@@ -38,8 +39,8 @@ export interface Event {
 
 export interface CreateEventData {
   name: string
-  responsible: string
-  email: string
+  responsible?: string
+  email?: string
   phone: string
   program: EventProgram
   type: EventType
@@ -56,4 +57,5 @@ export interface CreateEventData {
   observations?: string
   programDetails: string
   speakerCvs: string
+  codigosRequeridos: number
 }

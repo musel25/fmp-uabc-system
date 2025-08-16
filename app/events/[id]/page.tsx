@@ -9,9 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { EventTimeline } from "@/components/events/event-timeline"
-import { CertificateRequestDialog } from "@/components/events/certificate-request-dialog"
 import { Calendar, MapPin, Users, FileText, Download, Award, Edit, ArrowLeft, ExternalLink, Building, FileSpreadsheet } from "lucide-react"
-import { getEventById, requestCertificates } from "@/lib/supabase-database"
+import { getEventById } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
@@ -22,7 +21,6 @@ export default function EventDetailPage() {
   const { toast } = useToast()
   const [event, setEvent] = useState<Event | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isCertificateDialogOpen, setIsCertificateDialogOpen] = useState(false)
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -77,34 +75,7 @@ export default function EventDetailPage() {
     loadEvent()
   }, [params.id, router, toast])
 
-  const handleDownloadTemplate = () => {
-    toast({
-      title: "Descargando plantilla",
-      description: "La plantilla de difusión se está descargando...",
-    })
-    // Mock download functionality
-  }
 
-  const handleCertificateRequest = async (requestData: any) => {
-    if (!event) return
-
-    try {
-      const updatedEvent = await requestCertificates(event.id, requestData)
-      setEvent(updatedEvent)
-      toast({
-        title: "Solicitud enviada",
-        description: "Tu solicitud de constancias ha sido enviada para revisión",
-      })
-      setIsCertificateDialogOpen(false)
-    } catch (error) {
-      console.error('Certificate request error:', error)
-      toast({
-        title: "Error",
-        description: "No se pudo enviar la solicitud de constancias",
-        variant: "destructive",
-      })
-    }
-  }
 
   if (isLoading) {
     return (
@@ -139,8 +110,6 @@ export default function EventDetailPage() {
   }
 
   const canEdit = event.status === "rechazado"
-  const canDownloadTemplate = event.status === "aprobado"
-  const canRequestCertificates = event.status === "aprobado" && event.certificateStatus === "sin_solicitar"
 
   return (
     <ProtectedRoute>
@@ -323,12 +292,6 @@ export default function EventDetailPage() {
                     </Button>
                   )}
 
-                  {canDownloadTemplate && (
-                    <Button onClick={handleDownloadTemplate} className="btn-primary w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Descargar plantilla
-                    </Button>
-                  )}
 
                   {event.status === "aprobado" && (
                     <>
@@ -363,12 +326,6 @@ export default function EventDetailPage() {
                     </>
                   )}
 
-                  {canRequestCertificates && (
-                    <Button onClick={() => setIsCertificateDialogOpen(true)} className="btn-secondary w-full">
-                      <Award className="h-4 w-4 mr-2" />
-                      Solicitar constancias
-                    </Button>
-                  )}
 
                   {event.certificateStatus === "solicitadas" && (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -446,13 +403,6 @@ export default function EventDetailPage() {
           </div>
         </main>
 
-        {/* Certificate Request Dialog */}
-        <CertificateRequestDialog
-          event={event}
-          isOpen={isCertificateDialogOpen}
-          onClose={() => setIsCertificateDialogOpen(false)}
-          onSubmit={handleCertificateRequest}
-        />
       </div>
     </ProtectedRoute>
   )

@@ -1,10 +1,13 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Users, FileText, DollarSign } from "lucide-react"
+import { getAuthUser } from "@/lib/supabase-auth"
 import type { CreateEventData } from "@/lib/types"
+import type { AuthUser } from "@/lib/supabase-auth"
 
 interface EventReviewStepProps {
   form: UseFormReturn<CreateEventData>
@@ -12,6 +15,15 @@ interface EventReviewStepProps {
 
 export function EventReviewStep({ form }: EventReviewStepProps) {
   const data = form.getValues()
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    const fetchAuthUser = async () => {
+      const user = await getAuthUser()
+      setAuthUser(user)
+    }
+    fetchAuthUser()
+  }, [])
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "No especificada"
@@ -43,7 +55,7 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
         <CardContent className="space-y-4">
           <div>
             <h4 className="font-semibold text-lg">{data.name}</h4>
-            <p className="text-muted-foreground">Responsable: {data.responsible}</p>
+            <p className="text-muted-foreground">Responsable: {authUser?.name || 'Cargando...'}</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -91,11 +103,15 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="text-sm font-medium">Email</p>
-            <p className="text-sm text-muted-foreground">{data.email}</p>
+            <p className="text-sm text-muted-foreground">{authUser?.email || 'Cargando...'}</p>
           </div>
           <div>
             <p className="text-sm font-medium">Teléfono</p>
             <p className="text-sm text-muted-foreground">{data.phone}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium">Códigos 8 = 1 requeridos</p>
+            <p className="text-sm text-muted-foreground">{data.codigosRequeridos}</p>
           </div>
         </CardContent>
       </Card>

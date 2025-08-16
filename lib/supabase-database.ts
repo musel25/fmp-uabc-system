@@ -18,7 +18,6 @@ function dbRowToEvent(row: any): Event {
     startDate: row.start_date,
     endDate: row.end_date,
     hasCost: row.has_cost,
-    costDetails: row.cost_details,
     onlineInfo: row.online_info,
     organizers: row.organizers,
     observations: row.observations,
@@ -30,32 +29,33 @@ function dbRowToEvent(row: any): Event {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     programDetails: row.program_details || '',
-    speakerCvs: row.speaker_cvs || ''
+    speakerCvs: row.speaker_cvs || '',
+    codigosRequeridos: row.codigos_requeridos || 0
   }
 }
 
 // Convert Event type to database row (handle camelCase to snake_case)
 function eventToDbRow(event: CreateEventData, userId: string) {
   return {
-    name: event.name,
-    responsible: event.responsible,
-    email: event.email,
-    phone: event.phone,
+    name: event.name || '',
+    responsible: event.responsible || '',
+    email: event.email || '',
+    phone: event.phone || '',
     program: event.program,
     type: event.type,
     classification: event.classification,
-    classification_other: event.classificationOther,
+    classification_other: event.classificationOther || null,
     modality: event.modality,
-    venue: event.venue,
+    venue: event.venue || '',
     start_date: event.startDate,
     end_date: event.endDate,
-    has_cost: event.hasCost,
-    cost_details: event.costDetails,
-    online_info: event.onlineInfo,
-    organizers: event.organizers,
-    observations: event.observations,
-    program_details: event.programDetails,
-    speaker_cvs: event.speakerCvs,
+    has_cost: event.hasCost || false,
+    online_info: event.onlineInfo || null,
+    organizers: event.organizers || '',
+    observations: event.observations || null,
+    program_details: event.programDetails || '',
+    speaker_cvs: event.speakerCvs || null,
+    codigos_requeridos: event.codigosRequeridos || 0,
     user_id: userId,
     status: 'en_revision' as EventStatus,
     certificate_status: 'sin_solicitar' as CertificateStatus
@@ -66,6 +66,7 @@ function eventToDbRow(event: CreateEventData, userId: string) {
 export async function createEvent(eventData: CreateEventData, userId: string): Promise<Event> {
   try {
     const dbData = eventToDbRow(eventData, userId)
+    console.log('Creating event with data:', dbData)
     
     const { data, error } = await supabase
       .from('events')
@@ -73,11 +74,15 @@ export async function createEvent(eventData: CreateEventData, userId: string): P
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw error
+    }
 
     return dbRowToEvent(data)
   } catch (error) {
     console.error('Create event error:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     throw error
   }
 }
@@ -142,7 +147,6 @@ export async function updateEvent(eventId: string, updates: Partial<Event>): Pro
     if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate
     if (updates.endDate !== undefined) dbUpdates.end_date = updates.endDate
     if (updates.hasCost !== undefined) dbUpdates.has_cost = updates.hasCost
-    if (updates.costDetails !== undefined) dbUpdates.cost_details = updates.costDetails
     if (updates.onlineInfo !== undefined) dbUpdates.online_info = updates.onlineInfo
     if (updates.organizers !== undefined) dbUpdates.organizers = updates.organizers
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations
@@ -150,6 +154,7 @@ export async function updateEvent(eventId: string, updates: Partial<Event>): Pro
     if (updates.certificateStatus !== undefined) dbUpdates.certificate_status = updates.certificateStatus
     if (updates.adminComments !== undefined) dbUpdates.admin_comments = updates.adminComments
     if (updates.rejectionReason !== undefined) dbUpdates.rejection_reason = updates.rejectionReason
+    if (updates.codigosRequeridos !== undefined) dbUpdates.codigos_requeridos = updates.codigosRequeridos
 
     const { data, error } = await supabase
       .from('events')
@@ -295,36 +300,3 @@ export async function getEventStatistics(userId?: string) {
   }
 }
 
-// Request certificates for an event
-export async function requestCertificates(eventId: string, participantList: any): Promise<Event> {
-  try {
-    // First, create the certificate request
-    const { error: requestError } = await supabase
-      .from('certificate_requests')
-      .insert([{
-        event_id: eventId,
-        participant_list: participantList,
-        status: 'pending'
-      }])
-
-    if (requestError) throw requestError
-
-    // Then update the event's certificate status
-    const { data, error } = await supabase
-      .from('events')
-      .update({ 
-        certificate_status: 'solicitadas',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', eventId)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return dbRowToEvent(data)
-  } catch (error) {
-    console.error('Request certificates error:', error)
-    throw error
-  }
-}

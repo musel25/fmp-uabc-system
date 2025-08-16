@@ -1,13 +1,13 @@
 import { supabase } from './supabase'
 import type { Event, EventStatus } from './types'
 
-// Convert database row to Event type (reuse from supabase-database.ts)
+// Convert database row to Event type (admin version with profile data)
 function dbRowToEvent(row: any): Event {
   return {
     id: row.id,
     name: row.name,
-    responsible: row.responsible,
-    email: row.email,
+    responsible: row.profiles?.name || row.responsible,
+    email: row.profiles?.email || row.email,
     phone: row.phone,
     program: row.program,
     type: row.type,
@@ -29,8 +29,7 @@ function dbRowToEvent(row: any): Event {
     rejectionReason: row.rejection_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    cvFiles: [], // Will be loaded separately
-    programFile: undefined // Will be loaded separately
+    codigosRequeridos: row.codigos_requeridos || 0
   }
 }
 
@@ -178,93 +177,8 @@ export async function rejectEvent(eventId: string, reason: string, comments?: st
 }
 
 // Get certificate requests
-export async function getCertificateRequests(): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from('certificate_requests')
-      .select(`
-        *,
-        events (
-          id,
-          name,
-          responsible,
-          start_date,
-          end_date,
-          program,
-          user_id,
-          profiles!events_user_id_fkey (
-            name,
-            email
-          )
-        )
-      `)
-      .eq('status', 'pending')
-      .order('requested_at', { ascending: true })
 
-    if (error) throw error
 
-    return data
-  } catch (error) {
-    console.error('Get certificate requests error:', error)
-    throw error
-  }
-}
-
-// Approve certificate request
-export async function approveCertificateRequest(requestId: string): Promise<void> {
-  try {
-    // Start a transaction to update both certificate request and event
-    const { data: request, error: requestError } = await supabase
-      .from('certificate_requests')
-      .update({
-        status: 'approved',
-        processed_at: new Date().toISOString()
-      })
-      .eq('id', requestId)
-      .select('event_id')
-      .single()
-
-    if (requestError) throw requestError
-
-    // Update the event's certificate status
-    const { error: eventError } = await supabase
-      .from('events')
-      .update({
-        certificate_status: 'emitidas',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', request.event_id)
-
-    if (eventError) throw eventError
-  } catch (error) {
-    console.error('Approve certificate request error:', error)
-    throw error
-  }
-}
-
-// Reject certificate request
-export async function rejectCertificateRequest(requestId: string, reason?: string): Promise<void> {
-  try {
-    const updateData: any = {
-      status: 'rejected',
-      processed_at: new Date().toISOString()
-    }
-
-    if (reason?.trim()) {
-      updateData.rejection_reason = reason.trim()
-    }
-
-    const { error } = await supabase
-      .from('certificate_requests')
-      .update(updateData)
-      .eq('id', requestId)
-
-    if (error) throw error
-  } catch (error) {
-    console.error('Reject certificate request error:', error)
-    throw error
-  }
-}
 
 // Get admin statistics
 export async function getAdminStatistics() {
@@ -276,12 +190,6 @@ export async function getAdminStatistics() {
 
     if (eventError) throw eventError
 
-    // Get certificate request statistics
-    const { data: certStats, error: certError } = await supabase
-      .from('certificate_requests')
-      .select('status, requested_at')
-
-    if (certError) throw certError
 
     // Calculate statistics
     const total = eventStats.length
@@ -297,11 +205,6 @@ export async function getAdminStatistics() {
       emitidas: eventStats.filter((e) => e.certificate_status === 'emitidas').length,
     }
 
-    const certificateRequests = {
-      pending: certStats.filter((c) => c.status === 'pending').length,
-      approved: certStats.filter((c) => c.status === 'approved').length,
-      rejected: certStats.filter((c) => c.status === 'rejected').length,
-    }
 
     // Recent activity (last 30 days)
     const thirtyDaysAgo = new Date()
@@ -311,9 +214,6 @@ export async function getAdminStatistics() {
       (e) => new Date(e.created_at) >= thirtyDaysAgo
     ).length
 
-    const recentCertRequests = certStats.filter(
-      (c) => new Date(c.requested_at) >= thirtyDaysAgo
-    ).length
 
     return {
       events: {
@@ -321,10 +221,6 @@ export async function getAdminStatistics() {
         byStatus,
         byCertificateStatus,
         recent: recentEvents
-      },
-      certificates: {
-        requests: certificateRequests,
-        recent: recentCertRequests
       }
     }
   } catch (error) {

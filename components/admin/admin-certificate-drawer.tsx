@@ -60,7 +60,7 @@ export function AdminCertificateDrawer({ request, isOpen, onClose, onApproveCert
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Responsable</p>
-                <p>{event.responsible}</p>
+                <p>{event.profiles?.name || event.responsible || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Fechas</p>

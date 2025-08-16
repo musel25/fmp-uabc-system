@@ -77,13 +77,13 @@ export function AdminEventReviewDrawer({ event, isOpen, onClose, onReview }: Adm
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Responsable</p>
-                <p className="font-medium">{event.responsible}</p>
+                <p className="font-medium">{event.responsible || 'N/A'}</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p>{event.email}</p>
+                  <p>{event.email || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Teléfono</p>

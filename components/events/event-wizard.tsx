@@ -16,8 +16,8 @@ import type { CreateEventData } from "@/lib/types"
 
 const eventSchema = z.object({
   name: z.string().min(1, "El nombre del evento es requerido"),
-  responsible: z.string().min(1, "El responsable es requerido"),
-  email: z.string().email("Email inválido"),
+  responsible: z.string().optional(),
+  email: z.string().optional(),
   phone: z.string().min(1, "El teléfono es requerido"),
   program: z.enum(["Médico", "Psicología", "Nutrición", "Posgrado"]),
   type: z.enum(["Académico", "Cultural", "Deportivo", "Salud"]),
@@ -34,6 +34,7 @@ const eventSchema = z.object({
   observations: z.string().optional(),
   programDetails: z.string().min(1, "La descripción del evento es requerida"),
   speakerCvs: z.string().optional(),
+  codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
 }).refine((data) => {
   // Venue is required only if modality is not "En línea"
   if (data.modality !== "En línea" && (!data.venue || data.venue.trim() === "")) {
@@ -72,6 +73,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       organizers: "",
       programDetails: "",
       speakerCvs: "",
+      codigosRequeridos: 0,
       ...initialData,
     },
   })
@@ -86,9 +88,9 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     // For step 1, validate basic event fields
     if (currentStep === 1) {
       const fieldsToValidate: (keyof CreateEventData)[] = [
-        'name', 'responsible', 'email', 'phone', 'program', 
+        'name', 'phone', 'program', 
         'type', 'classification', 'modality', 'venue', 
-        'startDate', 'endDate', 'organizers'
+        'startDate', 'endDate', 'organizers', 'codigosRequeridos'
       ]
       
       const isValid = await form.trigger(fieldsToValidate)

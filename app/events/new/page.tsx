@@ -21,8 +21,15 @@ export default function NewEventPage() {
         return
       }
 
+      // Populate responsible and email from auth user
+      const eventData = {
+        ...data,
+        responsible: user.name,
+        email: user.email
+      }
+
       // Create event in database
-      const newEvent = await createEvent(data, user.id)
+      const newEvent = await createEvent(eventData, user.id)
 
       // If not a draft, submit for review
       let finalEvent = newEvent

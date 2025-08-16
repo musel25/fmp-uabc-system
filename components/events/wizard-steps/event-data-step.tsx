@@ -46,22 +46,6 @@ export function EventDataStep({ form }: EventDataStepProps) {
         {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
       </div>
 
-      <div>
-        <Label htmlFor="responsible">Responsable *</Label>
-        <Input
-          id="responsible"
-          {...register("responsible")}
-          placeholder="Nombre completo del responsable"
-          className="mt-1"
-        />
-        {errors.responsible && <p className="text-sm text-destructive mt-1">{errors.responsible.message}</p>}
-      </div>
-
-      <div>
-        <Label htmlFor="email">Email *</Label>
-        <Input id="email" type="email" {...register("email")} placeholder="correo@uabc.edu.mx" className="mt-1" />
-        {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
-      </div>
 
       <div>
         <Label htmlFor="phone">Teléfono *</Label>
@@ -218,6 +202,19 @@ export function EventDataStep({ form }: EventDataStepProps) {
           placeholder="Información adicional relevante"
           className="mt-1"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="codigosRequeridos">¿Cuántos códigos 8 = 1 se requieren? *</Label>
+        <Input
+          id="codigosRequeridos"
+          type="number"
+          min="0"
+          {...register("codigosRequeridos", { valueAsNumber: true })}
+          placeholder="0"
+          className="mt-1"
+        />
+        {errors.codigosRequeridos && <p className="text-sm text-destructive mt-1">{errors.codigosRequeridos.message}</p>}
       </div>
     </div>
   )

@@ -94,8 +94,8 @@ export default function AdminReviewPage() {
       filtered = filtered.filter(
         (event) =>
           event.name.toLowerCase().includes(searchLower) ||
-          event.responsible.toLowerCase().includes(searchLower) ||
-          event.email.toLowerCase().includes(searchLower),
+          (event.responsible && event.responsible.toLowerCase().includes(searchLower)) ||
+          (event.email && event.email.toLowerCase().includes(searchLower)),
       )
     }
 
@@ -196,8 +196,8 @@ export default function AdminReviewPage() {
         ...allEvents.map(event => [
           event.id,
           `"${event.name.replace(/"/g, '""')}"`,
-          `"${event.responsible.replace(/"/g, '""')}"`,
-          event.email,
+          `"${(event.responsible || '').replace(/"/g, '""')}"`,
+          event.email || '',
           event.phone,
           event.program,
           event.type,
@@ -423,8 +423,8 @@ export default function AdminReviewPage() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{event.responsible}</p>
-                              <p className="text-sm text-muted-foreground">{event.email}</p>
+                              <p className="font-medium">{event.responsible || 'N/A'}</p>
+                              <p className="text-sm text-muted-foreground">{event.email || 'N/A'}</p>
                             </div>
                           </TableCell>
                           <TableCell>
