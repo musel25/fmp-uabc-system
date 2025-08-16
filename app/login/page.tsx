@@ -12,6 +12,7 @@ import { Logo } from "@/components/ui/logo"
 import { useToast } from "@/hooks/use-toast"
 import { signIn, signUp, getAuthUser } from "@/lib/supabase-auth"
 import { Footer } from "@/components/layout/footer"
+import { Eye, EyeOff } from "lucide-react"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -21,6 +22,7 @@ function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -272,16 +274,30 @@ function LoginForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {isSignUp && (
                 <p className="text-xs text-muted-foreground">Mínimo 6 caracteres</p>
               )}
