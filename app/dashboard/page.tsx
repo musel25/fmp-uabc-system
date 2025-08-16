@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const filteredEvents = getFilteredEvents()
 
   const EmptyState = ({ status }: { status?: string }) => (
-    <div className="text-center py-12">
+    <div className="text-center">
       <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
         <Calendar className="h-12 w-12 text-muted-foreground" />
       </div>
@@ -104,9 +104,9 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
         <Navbar showAdminToggle />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground-strong">Mis Eventos</h1>
               <p className="text-muted-foreground mt-1">Gestiona tus eventos y solicitudes de constancias</p>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="todos">Todos ({events.filter(event => event.status !== "borrador").length})</TabsTrigger>
               <TabsTrigger value="revision">En revisión ({filterEventsByStatus("en_revision").length})</TabsTrigger>
@@ -126,27 +126,34 @@ export default function DashboardPage() {
               <TabsTrigger value="rechazado">Rechazado ({filterEventsByStatus("rechazado").length})</TabsTrigger>
             </TabsList>
 
-            <TabsContent value={activeTab}>
+            <TabsContent value={activeTab} className="flex-1 flex flex-col mt-6">
               {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="ml-2 text-muted-foreground">Cargando eventos...</span>
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                    <span className="text-muted-foreground">Cargando eventos...</span>
+                  </div>
                 </div>
               ) : error ? (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                    <Calendar className="h-12 w-12 text-red-600" />
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                      <Calendar className="h-12 w-12 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar eventos</h3>
+                    <p className="text-muted-foreground mb-6">{error}</p>
+                    <Button onClick={() => window.location.reload()} variant="outline">
+                      Intentar de nuevo
+                    </Button>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar eventos</h3>
-                  <p className="text-muted-foreground mb-6">{error}</p>
-                  <Button onClick={() => window.location.reload()} variant="outline">
-                    Intentar de nuevo
-                  </Button>
                 </div>
               ) : filteredEvents.length === 0 ? (
-                <EmptyState status={activeTab === "todos" ? undefined : activeTab} />
+                <div className="flex-1 flex items-center justify-center">
+                  <EmptyState status={activeTab === "todos" ? undefined : activeTab} />
+                </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="flex-1 overflow-auto">
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 h-fit">
                   {filteredEvents.map((event) => (
                     <Card key={event.id} className="card-uabc hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
@@ -241,6 +248,7 @@ export default function DashboardPage() {
                       </CardContent>
                     </Card>
                   ))}
+                  </div>
                 </div>
               )}
             </TabsContent>
