@@ -9,6 +9,8 @@ import { getEventById, updateEvent, submitEventForReview } from "@/lib/supabase-
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { Event, CreateEventData } from "@/lib/types"
+import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
 
 export default function EditEventPage() {
   const params = useParams()
@@ -114,7 +116,8 @@ export default function EditEventPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background flex flex-col">
+          <Header />
           <Navbar />
           <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="animate-pulse space-y-6">
@@ -165,6 +168,7 @@ export default function EditEventPage() {
             }}
           />
         </main>
+        <Footer />
       </div>
     </ProtectedRoute>
   )

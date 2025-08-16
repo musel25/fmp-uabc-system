@@ -14,6 +14,8 @@ import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { Event, EventStatus } from "@/lib/types"
+import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -99,7 +101,8 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
         <Navbar showAdminToggle />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -243,6 +246,7 @@ export default function DashboardPage() {
             </TabsContent>
           </Tabs>
         </main>
+        <Footer />
       </div>
     </ProtectedRoute>
   )

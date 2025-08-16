@@ -9,6 +9,7 @@ import { Logo } from "@/components/ui/logo"
 import { useToast } from "@/hooks/use-toast"
 import { sendPasswordResetEmail } from "@/lib/supabase-auth"
 import Link from "next/link"
+import { Footer } from "@/components/layout/footer"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -35,9 +36,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{
+    <div className="min-h-screen flex flex-col" style={{
       background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
     }}>
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
           <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
@@ -84,6 +86,8 @@ export default function ForgotPasswordPage() {
           )}
         </CardContent>
       </Card>
+      </div>
+      <Footer />
     </div>
   )
 }

@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Logo } from "@/components/ui/logo"
 import { useToast } from "@/hooks/use-toast"
 import { signIn, signUp, getAuthUser } from "@/lib/supabase-auth"
+import { Footer } from "@/components/layout/footer"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -194,19 +195,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{
+    <div className="min-h-screen flex flex-col" style={{
       background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
     }}>
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center text-white space-y-2">
-          <h1 className="text-2xl font-bold leading-tight">
-            Extensión de la cultura y divulgación de la ciencia
-          </h1>
-          <p className="text-white/90 text-sm">
-            Dra. Naysin Yaheko Pardo Buitimea
-          </p>
-        </div>
-        <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center text-white space-y-2">
+            <h1 className="text-2xl font-bold leading-tight">
+              Extensión de la cultura y divulgación de la ciencia
+            </h1>
+            <p className="text-white/90 text-sm">
+              Dra. Naysin Yaheko Pardo Buitimea
+            </p>
+          </div>
+          <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
           <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
           <div>
@@ -319,8 +321,10 @@ export default function LoginPage() {
             </div>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+        </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -7,6 +7,8 @@ import { createEvent, submitEventForReview } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { CreateEventData } from "@/lib/types"
+import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
 
 export default function NewEventPage() {
   const router = useRouter()
@@ -57,7 +59,8 @@ export default function NewEventPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
         <Navbar />
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -67,6 +70,7 @@ export default function NewEventPage() {
 
           <EventWizard onSubmit={handleCreateEvent} />
         </main>
+        <Footer />
       </div>
     </ProtectedRoute>
   )

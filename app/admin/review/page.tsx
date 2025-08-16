@@ -16,6 +16,8 @@ import { Calendar, Filter, Eye, Loader2, Download } from "lucide-react"
 import { getEventsForReview, getAllEvents, approveEvent, rejectEvent } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
+import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
 
 export default function AdminReviewPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -248,7 +250,8 @@ export default function AdminReviewPage() {
 
   return (
     <ProtectedRoute requireAdmin>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
         <Navbar showAdminToggle />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -448,6 +451,7 @@ export default function AdminReviewPage() {
             </CardContent>
           </Card>
         </main>
+        <Footer />
 
         {/* Review Drawer */}
         <AdminEventReviewDrawer

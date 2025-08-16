@@ -12,6 +12,8 @@ import { Award, Eye, Calendar, Loader2 } from "lucide-react"
 import { getCertificateRequests, approveCertificateRequest } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
+import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
 
 export default function AdminCertificatesPage() {
   const [certificateRequests, setCertificateRequests] = useState<any[]>([])
@@ -85,7 +87,8 @@ export default function AdminCertificatesPage() {
 
   return (
     <ProtectedRoute requireAdmin>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
         <Navbar showAdminToggle />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -226,6 +229,7 @@ export default function AdminCertificatesPage() {
             </CardContent>
           </Card>
         </main>
+        <Footer />
 
         {/* Certificate Review Drawer */}
         <AdminCertificateDrawer
