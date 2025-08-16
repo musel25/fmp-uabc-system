@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Event, EventStatus } from './types'
+import { sendEventApprovedNotification, sendAdminCodesNotification } from './email'
 
 // Convert database row to Event type (admin version with profile data)
 function dbRowToEvent(row: any): Event {
@@ -135,12 +136,35 @@ export async function approveEvent(eventId: string, comments?: string): Promise<
       .from('events')
       .update(updateData)
       .eq('id', eventId)
-      .select()
+      .select(`
+        *,
+        profiles!events_user_id_fkey (
+          name,
+          email
+        )
+      `)
       .single()
 
     if (error) throw error
 
-    return dbRowToEvent(data)
+    const approvedEvent = dbRowToEvent(data)
+
+    // Send email notification to the event creator
+    await sendEventApprovedNotification({
+      eventName: approvedEvent.name,
+      userName: approvedEvent.responsible || 'Usuario',
+      userEmail: approvedEvent.email || '',
+      eventId: approvedEvent.id
+    })
+
+    // Send email notification to admin about required codes
+    await sendAdminCodesNotification({
+      eventName: approvedEvent.name,
+      eventId: approvedEvent.id,
+      codigosRequeridos: approvedEvent.codigosRequeridos || 0
+    })
+
+    return approvedEvent
   } catch (error) {
     console.error('Approve event error:', error)
     throw error

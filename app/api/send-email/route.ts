@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Sistema FMP <noreply@resend.dev>',
+      from: 'Sistema FMP <noreply@uabc.musel.dev>',
       to: [to],
       subject,
       html,

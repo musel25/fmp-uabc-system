@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/ui/status-badge"
 import { AdminCertificateDrawer } from "@/components/admin/admin-certificate-drawer"
 import { Award, Eye, Calendar, Loader2 } from "lucide-react"
-import { getCertificateRequests, approveCertificateRequest } from "@/lib/supabase-admin"
+// Certificate functions removed - not used
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
 import { Footer } from "@/components/layout/footer"
@@ -29,8 +29,9 @@ export default function AdminCertificatesPage() {
         setIsLoading(true)
         setError(null)
 
-        const requests = await getCertificateRequests()
-        setCertificateRequests(requests)
+        // Certificate functions removed - not used
+        // const requests = await getCertificateRequests()
+        setCertificateRequests([])
       } catch (error) {
         console.error('Load certificate requests error:', error)
         setError('Error al cargar las solicitudes de constancias')
@@ -54,7 +55,8 @@ export default function AdminCertificatesPage() {
 
   const handleApproveCertificates = async (requestId: string) => {
     try {
-      await approveCertificateRequest(requestId)
+      // Certificate functions removed - not used
+      // await approveCertificateRequest(requestId)
 
       // Remove the approved request from the list
       setCertificateRequests((prev) => prev.filter((req) => req.id !== requestId))
