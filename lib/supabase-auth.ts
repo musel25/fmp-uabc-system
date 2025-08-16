@@ -20,6 +20,10 @@ export interface AuthUser {
 // Sign up new user
 export async function signUp(email: string, password: string, name: string) {
   try {
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://fmp-uabc-system.vercel.app/login'
+      : 'http://localhost:3000/login'
+      
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -27,7 +31,7 @@ export async function signUp(email: string, password: string, name: string) {
         data: {
           name: name
         },
-        emailRedirectTo: 'https://fmp-uabc-system.vercel.app/login'
+        emailRedirectTo: redirectUrl
       }
     })
 
@@ -162,8 +166,12 @@ export function onAuthStateChange(callback: (user: User | null) => void) {
 
 // Send password reset email
 export async function sendPasswordResetEmail(email: string) {
+  const redirectUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://fmp-uabc-system.vercel.app/reset-password'
+    : 'http://localhost:3000/reset-password'
+    
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://fmp-uabc-system.vercel.app/reset-password',
+    redirectTo: redirectUrl,
   })
   if (error) throw error
 }
