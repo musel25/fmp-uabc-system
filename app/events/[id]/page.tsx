@@ -300,7 +300,7 @@ export default function EventDetailPage() {
                         className="btn-primary w-full"
                       >
                         <Award className="h-4 w-4 mr-2" />
-                        Generar constancias
+                        Constancias
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Button>
 
@@ -310,7 +310,7 @@ export default function EventDetailPage() {
                         className="w-full"
                       >
                         <Building className="h-4 w-4 mr-2" />
-                        Reservar espacio
+                        Espacios
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Button>
 
@@ -320,7 +320,7 @@ export default function EventDetailPage() {
                         className="w-full"
                       >
                         <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Template para difusión
+                        Template
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Button>
                     </>

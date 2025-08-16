@@ -77,7 +77,7 @@ export default function AdminReviewPage() {
       filtered = filtered.filter((event) => event.program === filters.program)
     }
 
-    if (filters.status) {
+    if (filters.status && filters.status !== "all") {
       filtered = filtered.filter((event) => event.status === filters.status)
     }
 
