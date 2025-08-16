@@ -26,7 +26,8 @@ export async function signUp(email: string, password: string, name: string) {
       options: {
         data: {
           name: name
-        }
+        },
+        emailRedirectTo: 'https://fmp-uabc-system.vercel.app/login'
       }
     })
 
