@@ -198,9 +198,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col" style={{
       background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
     }}>
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center text-white space-y-2">
+      <div className="flex-1 flex flex-col justify-center p-4">
+        <div className="w-full space-y-12">
+          <div className="text-center text-white space-y-2 px-4 -mt-15">
             <h1 className="text-2xl font-bold leading-tight">
               Extensión de la cultura y divulgación de la ciencia
             </h1>
@@ -208,6 +208,7 @@ export default function LoginPage() {
               Dra. Naysin Yaheko Pardo Buitimea
             </p>
           </div>
+          <div className="max-w-md mx-auto">
           <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
           <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
@@ -322,6 +323,7 @@ export default function LoginPage() {
           </form>
         </CardContent>
         </Card>
+        </div>
         </div>
       </div>
       <Footer />

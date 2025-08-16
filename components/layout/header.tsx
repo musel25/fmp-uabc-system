@@ -1,7 +1,7 @@
 export function Header() {
   return (
     <header className="bg-primary text-white py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="w-full px-4 text-center">
         <h1 className="text-2xl font-bold leading-tight">
           Extensión de la cultura y divulgación de la ciencia
         </h1>
