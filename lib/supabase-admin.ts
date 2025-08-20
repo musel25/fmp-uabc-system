@@ -23,6 +23,8 @@ function dbRowToEvent(row: any): Event {
     onlineInfo: row.online_info,
     organizers: row.organizers,
     observations: row.observations,
+    programDetails: row.program_details,
+    speakerCvs: row.speaker_cvs,
     status: row.status,
     certificateStatus: row.certificate_status,
     userId: row.user_id,
@@ -161,7 +163,14 @@ export async function approveEvent(eventId: string, comments?: string): Promise<
     await sendAdminCodesNotification({
       eventName: approvedEvent.name,
       eventId: approvedEvent.id,
-      codigosRequeridos: approvedEvent.codigosRequeridos || 0
+      codigosRequeridos: approvedEvent.codigosRequeridos || 0,
+      startDate: approvedEvent.startDate,
+      endDate: approvedEvent.endDate,
+      venue: approvedEvent.venue,
+      type: approvedEvent.type,
+      classification: approvedEvent.classification,
+      classificationOther: approvedEvent.classificationOther,
+      programDetails: approvedEvent.programDetails
     })
 
     return approvedEvent
