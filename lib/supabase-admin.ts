@@ -170,7 +170,9 @@ export async function approveEvent(eventId: string, comments?: string): Promise<
       type: approvedEvent.type,
       classification: approvedEvent.classification,
       classificationOther: approvedEvent.classificationOther,
-      programDetails: approvedEvent.programDetails
+      programDetails: approvedEvent.programDetails,
+      userName: approvedEvent.responsible || 'Usuario',
+      userEmail: approvedEvent.email || ''
     })
 
     return approvedEvent

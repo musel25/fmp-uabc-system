@@ -24,6 +24,8 @@ interface AdminCodesNotification {
   classification: string
   classificationOther?: string
   programDetails: string
+  userName: string
+  userEmail: string
 }
 
 // Send email notification for new event registration
@@ -245,15 +247,15 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
                   <td style="padding: 8px 0;">${data.eventName}</td>
                 </tr>
                 <tr>
+                  <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">REGISTRADO POR:</td>
+                  <td style="padding: 8px 0;">${data.userName} (${data.userEmail})</td>
+                </tr>
+                <tr>
                   <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">Fecha o período de realización del evento:</td>
                   <td style="padding: 8px 0;">${dateRange}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">HORA:</td>
-                  <td style="padding: 8px 0;">${startDateTime.time}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">Time (hora en formato HH:MM):</td>
                   <td style="padding: 8px 0;">${startDateTime.time}</td>
                 </tr>
                 <tr>
@@ -296,11 +298,11 @@ INFORMACIÓN DEL EVENTO
 
 NOMBRE: ${data.eventName}
 
+REGISTRADO POR: ${data.userName} (${data.userEmail})
+
 Fecha o período de realización del evento: ${dateRange}
 
 HORA: ${startDateTime.time}
-
-Time (hora en formato HH:MM): ${startDateTime.time}
 
 LUGAR: ${data.venue}
 
