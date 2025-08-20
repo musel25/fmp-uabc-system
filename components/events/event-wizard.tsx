@@ -34,7 +34,7 @@ const eventSchema = z.object({
   organizers: z.string().min(1, "Los organizadores son requeridos"),
   observations: z.string().optional(),
   programDetails: z.string().min(1, "La descripción del evento es requerida"),
-  speakerCvs: z.string().optional(),
+  speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
   codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
 }).refine((data) => {
   // Venue is required only if modality is not "En línea"
@@ -110,7 +110,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     }
     // For step 2, validate program details
     else if (currentStep === 2) {
-      const isValid = await form.trigger(['programDetails'])
+      const isValid = await form.trigger(['programDetails', 'speakerCvs'])
       console.log('Step 2 validation:', isValid, 'Errors:', form.formState.errors)
       
       if (isValid) {
