@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Form } from "@/components/ui/form"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { EventDataStep } from "./wizard-steps/event-data-step"
 import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
@@ -54,6 +55,7 @@ interface EventWizardProps {
 export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
 
   const form = useForm<CreateEventData>({
     resolver: zodResolver(eventSchema),
@@ -133,6 +135,10 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     }
   }
 
+  const handleExit = () => {
+    router.push("/dashboard")
+  }
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -191,10 +197,16 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={handlePrevious} disabled={currentStep === 1}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Anterior
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={handleExit}>
+            <X className="h-4 w-4 mr-2" />
+            Salir
+          </Button>
+          <Button type="button" variant="outline" onClick={handlePrevious} disabled={currentStep === 1}>
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Anterior
+          </Button>
+        </div>
 
         <div className="flex gap-2">
           {currentStep === 3 && (
