@@ -26,7 +26,6 @@ function dbRowToEvent(row: any): Event {
     programDetails: row.program_details,
     speakerCvs: row.speaker_cvs,
     status: row.status,
-    certificateStatus: row.certificate_status,
     userId: row.user_id,
     adminComments: row.admin_comments,
     rejectionReason: row.rejection_reason,
@@ -221,7 +220,7 @@ export async function getAdminStatistics() {
     // Get event statistics
     const { data: eventStats, error: eventError } = await supabase
       .from('events')
-      .select('status, certificate_status, created_at')
+      .select('status, created_at')
 
     if (eventError) throw eventError
 
@@ -232,12 +231,6 @@ export async function getAdminStatistics() {
       en_revision: eventStats.filter((e) => e.status === 'en_revision').length,
       aprobado: eventStats.filter((e) => e.status === 'aprobado').length,
       rechazado: eventStats.filter((e) => e.status === 'rechazado').length,
-    }
-
-    const byCertificateStatus = {
-      sin_solicitar: eventStats.filter((e) => e.certificate_status === 'sin_solicitar').length,
-      solicitadas: eventStats.filter((e) => e.certificate_status === 'solicitadas').length,
-      emitidas: eventStats.filter((e) => e.certificate_status === 'emitidas').length,
     }
 
 
@@ -254,7 +247,6 @@ export async function getAdminStatistics() {
       events: {
         total,
         byStatus,
-        byCertificateStatus,
         recent: recentEvents
       }
     }

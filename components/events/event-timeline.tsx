@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Check, Clock, X, FileText, Award } from "lucide-react"
+import { Check, Clock, X, FileText } from "lucide-react"
 import type { Event } from "@/lib/types"
 
 interface EventTimelineProps {
@@ -37,26 +37,6 @@ export function EventTimeline({ event, className = "" }: EventTimelineProps) {
     },
   ]
 
-  // Add certificate steps if event is approved
-  if (event.status === "aprobado") {
-    steps.push({
-      id: "constancias",
-      title: "Constancias",
-      description:
-        event.certificateStatus === "sin_solicitar"
-          ? "Sin solicitar"
-          : event.certificateStatus === "solicitadas"
-            ? "Solicitadas"
-            : "Emitidas",
-      icon: Award,
-      status:
-        event.certificateStatus === "emitidas"
-          ? "completed"
-          : event.certificateStatus === "solicitadas"
-            ? "current"
-            : "pending",
-    })
-  }
 
   return (
     <Card className={`card-uabc ${className}`}>

@@ -330,23 +330,6 @@ export default function EventDetailPage() {
                   )}
 
 
-                  {event.certificateStatus === "solicitadas" && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-sm text-amber-800 font-medium">Constancias solicitadas</p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Tu solicitud está en revisión. Recibirás una notificación cuando estén listas.
-                      </p>
-                    </div>
-                  )}
-
-                  {event.certificateStatus === "emitidas" && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">Constancias emitidas</p>
-                      <p className="text-xs text-green-700 mt-1">
-                        Las constancias han sido generadas y están disponibles para descarga.
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 

@@ -20,7 +20,6 @@ CREATE TABLE public.events (
   organizers text NOT NULL,
   observations text,
   status text NOT NULL DEFAULT 'borrador'::text CHECK (status = ANY (ARRAY['borrador'::text, 'en_revision'::text, 'aprobado'::text, 'rechazado'::text])),
-  certificate_status text NOT NULL DEFAULT 'sin_solicitar'::text CHECK (certificate_status = ANY (ARRAY['sin_solicitar'::text, 'solicitadas'::text, 'emitidas'::text])),
   user_id uuid NOT NULL,
   admin_comments text,
   rejection_reason text,

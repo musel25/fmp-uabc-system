@@ -186,7 +186,6 @@ export default function AdminReviewPage() {
         "Organizadores",
         "Observaciones",
         "Estado",
-        "Estado Constancias",
         "Comentarios Admin",
         "Fecha Creación",
         "Fecha Actualización"
@@ -214,7 +213,6 @@ export default function AdminReviewPage() {
           `"${event.organizers.replace(/"/g, '""')}"`,
           event.observations ? `"${event.observations.replace(/"/g, '""')}"` : "",
           event.status,
-          event.certificateStatus,
           event.adminComments ? `"${event.adminComments.replace(/"/g, '""')}"` : "",
           event.createdAt,
           event.updatedAt

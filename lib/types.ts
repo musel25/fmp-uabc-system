@@ -1,5 +1,4 @@
 export type EventStatus = "en_revision" | "aprobado" | "rechazado"
-export type CertificateStatus = "sin_solicitar" | "solicitadas" | "emitidas"
 export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado"
 export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"
 export type EventClassification = "Conferencia" | "Seminario" | "Taller" | "Otro"
@@ -29,7 +28,6 @@ export interface Event {
   speakerCvs: string
   codigosRequeridos: number
   status: EventStatus
-  certificateStatus: CertificateStatus
   createdAt: string
   updatedAt: string
   userId: string

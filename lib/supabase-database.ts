@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Event, CreateEventData, EventStatus, CertificateStatus } from './types'
+import type { Event, CreateEventData, EventStatus } from './types'
 import { sendNewEventNotification } from './email'
 
 // Convert database row to Event type (handle snake_case to camelCase)
@@ -23,7 +23,6 @@ function dbRowToEvent(row: any): Event {
     organizers: row.organizers,
     observations: row.observations,
     status: row.status,
-    certificateStatus: row.certificate_status,
     userId: row.user_id,
     adminComments: row.admin_comments,
     rejectionReason: row.rejection_reason,
@@ -58,8 +57,7 @@ function eventToDbRow(event: CreateEventData, userId: string) {
     speaker_cvs: event.speakerCvs || null,
     codigos_requeridos: event.codigosRequeridos || 0,
     user_id: userId,
-    status: 'en_revision' as EventStatus,
-    certificate_status: 'sin_solicitar' as CertificateStatus
+    status: 'en_revision' as EventStatus
   }
 }
 
@@ -185,7 +183,6 @@ export async function updateEvent(eventId: string, updates: Partial<Event>): Pro
     if (updates.organizers !== undefined) dbUpdates.organizers = updates.organizers
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations
     if (updates.status !== undefined) dbUpdates.status = updates.status
-    if (updates.certificateStatus !== undefined) dbUpdates.certificate_status = updates.certificateStatus
     if (updates.adminComments !== undefined) dbUpdates.admin_comments = updates.adminComments
     if (updates.rejectionReason !== undefined) dbUpdates.rejection_reason = updates.rejectionReason
     if (updates.codigosRequeridos !== undefined) dbUpdates.codigos_requeridos = updates.codigosRequeridos
@@ -305,7 +302,7 @@ export async function searchEvents(
 // Get event statistics
 export async function getEventStatistics(userId?: string) {
   try {
-    let query = supabase.from('events').select('status, certificate_status')
+    let query = supabase.from('events').select('status')
     
     if (userId) {
       query = query.eq('user_id', userId)
@@ -321,13 +318,8 @@ export async function getEventStatistics(userId?: string) {
       aprobado: data.filter((e) => e.status === 'aprobado').length,
       rechazado: data.filter((e) => e.status === 'rechazado').length,
     }
-    const byCertificateStatus = {
-      sin_solicitar: data.filter((e) => e.certificate_status === 'sin_solicitar').length,
-      solicitadas: data.filter((e) => e.certificate_status === 'solicitadas').length,
-      emitidas: data.filter((e) => e.certificate_status === 'emitidas').length,
-    }
 
-    return { total, byStatus, byCertificateStatus }
+    return { total, byStatus }
   } catch (error) {
     console.error('Get event statistics error:', error)
     throw error
