@@ -2,6 +2,8 @@
 
 A Next.js 15 web application for the Faculty of Medicine and Psychology (FMP) at Universidad Autónoma de Baja California (UABC). This system manages event registration, admin review workflows, and certificate generation.
 
+**🌐 Live Preview:** [fmp-uabc-system.vercel.app](https://fmp-uabc-system.vercel.app)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
