@@ -85,19 +85,6 @@ async function rejectEvent(
 ): Promise<Event>
 ```
 
-#### `requestCertificates`
-Requests certificates for an approved event.
-
-```typescript
-async function requestCertificates(eventId: string): Promise<Event>
-```
-
-#### `issueCertificates` (Admin only)
-Marks certificates as issued for an event.
-
-```typescript
-async function issueCertificates(eventId: string): Promise<Event>
-```
 
 ### Data Fetching
 
@@ -221,7 +208,6 @@ interface Event {
   speakerCvs: string
   codigosRequeridos: number
   status: EventStatus
-  certificateStatus: CertificateStatus
   createdAt: string
   updatedAt: string
   userId: string
@@ -263,10 +249,6 @@ interface CreateEventData {
 type EventStatus = 'borrador' | 'en_revision' | 'aprobado' | 'rechazado'
 ```
 
-#### `CertificateStatus`
-```typescript
-type CertificateStatus = 'sin_solicitar' | 'solicitadas' | 'emitidas'
-```
 
 #### `EventProgram`
 ```typescript

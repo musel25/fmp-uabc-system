@@ -357,32 +357,6 @@ import { EventTimeline } from '@/components/events/event-timeline'
 <EventTimeline event={eventData} />
 ```
 
-### CertificateRequestDialog
-Modal for requesting certificates for approved events.
-
-**Location:** `components/events/certificate-request-dialog.tsx`
-
-**Props:**
-```typescript
-interface CertificateRequestDialogProps {
-  event: Event
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: () => void
-}
-```
-
-**Usage:**
-```tsx
-import { CertificateRequestDialog } from '@/components/events/certificate-request-dialog'
-
-<CertificateRequestDialog
-  event={selectedEvent}
-  open={isDialogOpen}
-  onOpenChange={setIsDialogOpen}
-  onSubmit={handleCertificateRequest}
-/>
-```
 
 ## Admin Components
 
@@ -419,25 +393,6 @@ import { AdminEventReviewDrawer } from '@/components/admin/admin-event-review-dr
 />
 ```
 
-### AdminCertificateDrawer
-Certificate management panel for admins.
-
-**Location:** `components/admin/admin-certificate-drawer.tsx`
-
-**Props:**
-```typescript
-interface AdminCertificateDrawerProps {
-  event: Event | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onEventUpdate: () => void
-}
-```
-
-**Features:**
-- Certificate status management
-- Event details display
-- Issuance tracking
 
 ## Common Utilities
 

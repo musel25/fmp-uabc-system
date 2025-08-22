@@ -146,10 +146,6 @@ CREATE TABLE public.events (
   - `'aprobado'` - Approved by admin
   - `'rechazado'` - Rejected by admin
 
-- **`certificate_status`** (`text`, Not Null, Default: 'sin_solicitar'): Certificate workflow
-  - `'sin_solicitar'` - Not requested
-  - `'solicitadas'` - Requested by user
-  - `'emitidas'` - Issued by admin
 
 #### Administrative Fields
 - **`user_id`** (`uuid`, Not Null): Foreign key to profiles table
@@ -196,14 +192,6 @@ User Submits for Review (status: 'en_revision')
 └─────────────────┴─────────────────┘
 ```
 
-### 2. Certificate Workflow
-```
-Event Approved (certificate_status: 'sin_solicitar')
-           ↓
-User Requests Certificates (certificate_status: 'solicitadas')
-           ↓
-Admin Issues Certificates (certificate_status: 'emitidas')
-```
 
 ## Row Level Security (RLS)
 
@@ -254,7 +242,6 @@ CREATE POLICY "Admins can update events" ON events
 ```typescript
 // lib/types.ts
 export type EventStatus = 'borrador' | 'en_revision' | 'aprobado' | 'rechazado'
-export type CertificateStatus = 'sin_solicitar' | 'solicitadas' | 'emitidas'
 export type EventProgram = 'Médico' | 'Psicología' | 'Nutrición' | 'Posgrado'
 export type EventType = 'Académico' | 'Cultural' | 'Deportivo' | 'Salud'
 export type EventClassification = 'Conferencia' | 'Seminario' | 'Taller' | 'Otro'
@@ -307,14 +294,6 @@ JOIN profiles p ON e.user_id = p.id
 WHERE e.status = 'en_revision'
 ORDER BY e.created_at ASC;
 
--- Get approved events with certificate requests
-SELECT 
-  e.*, p.name as user_name
-FROM events e
-JOIN profiles p ON e.user_id = p.id
-WHERE e.status = 'aprobado' 
-AND e.certificate_status = 'solicitadas'
-ORDER BY e.updated_at ASC;
 ```
 
 ### Analytics Queries
@@ -369,7 +348,6 @@ CREATE UNIQUE INDEX profiles_email_key ON profiles(email);
 CREATE INDEX idx_events_status ON events(status);
 CREATE INDEX idx_events_created_at ON events(created_at DESC);
 CREATE INDEX idx_events_user_status ON events(user_id, status);
-CREATE INDEX idx_events_certificate_status ON events(certificate_status);
 CREATE INDEX idx_events_program ON events(program);
 CREATE INDEX idx_events_dates ON events(start_date, end_date);
 ```
