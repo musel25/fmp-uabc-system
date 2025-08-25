@@ -13,6 +13,15 @@ interface EventApprovedNotification {
   eventId: string
 }
 
+interface EventRejectedNotification {
+  eventName: string
+  userName: string
+  userEmail: string
+  eventId: string
+  rejectionReason: string
+  adminComments?: string
+}
+
 interface AdminCodesNotification {
   eventName: string
   eventId: string
@@ -158,6 +167,88 @@ Sistema de Registro y Constancias - FMP UABC
   } catch (error) {
     // Log the error but don't throw it - we don't want email failures to break event approval
     console.error('Failed to send event approval notification:', error)
+    console.error('Event data:', data)
+  }
+}
+
+// Send email notification when event is rejected
+export async function sendEventRejectedNotification(data: EventRejectedNotification): Promise<void> {
+  try {
+    const commentsBlockHtml = data.adminComments?.trim()
+      ? `
+        <div style="margin-top: 16px;">
+          <p style="margin: 0 0 8px 0;"><strong>Comentarios del revisor:</strong></p>
+          <div style="background-color: #fff; padding: 12px; border-left: 4px solid #b00020; white-space: pre-wrap;">${data.adminComments}</div>
+        </div>
+      `
+      : ''
+
+    const commentsBlockText = data.adminComments?.trim()
+      ? `\nComentarios del revisor:\n${data.adminComments}\n`
+      : ''
+
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: data.userEmail,
+        subject: `Tu evento "${data.eventName}" fue rechazado`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #b00020;">Tu evento fue rechazado</h2>
+            <p>Hola ${data.userName},</p>
+            <p>Lamentamos informarte que tu evento no fue aprobado en esta revisión:</p>
+
+            <div style="background-color: #fdf3f3; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b00020;">
+              <h3 style="margin-top: 0; color: #b00020;">${data.eventName}</h3>
+              <p><strong>Estado:</strong> <span style="color: #b00020; font-weight: bold;">Rechazado ✗</span></p>
+              <p><strong>ID del evento:</strong> ${data.eventId}</p>
+              <p style="margin-top: 12px;"><strong>Motivo de rechazo:</strong></p>
+              <div style="background-color: #fff; padding: 12px; border-left: 4px solid #b00020; white-space: pre-wrap;">${data.rejectionReason}</div>
+              ${commentsBlockHtml}
+            </div>
+
+            <p>Por favor, modifica el registro de tu evento de acuerdo con los comentarios indicados y vuelve a enviarlo para que pueda ser evaluado nuevamente.</p>
+
+            <p style="color: #666; font-size: 12px; margin-top: 30px;">
+              Este es un mensaje automático del Sistema de Registro y Constancias - FMP UABC
+            </p>
+          </div>
+        `,
+        text: `
+Tu evento fue rechazado
+
+Hola ${data.userName},
+
+Lamentamos informarte que tu evento no fue aprobado en esta revisión:
+
+Evento: ${data.eventName}
+Estado: Rechazado ✗
+ID del evento: ${data.eventId}
+
+Motivo de rechazo:
+${data.rejectionReason}
+${commentsBlockText}
+Por favor, modifica el registro de tu evento de acuerdo con los comentarios indicados y vuelve a enviarlo para que pueda ser evaluado nuevamente.
+
+Si tienes dudas, responde a este correo o contacta al equipo administrativo.
+
+---
+Sistema de Registro y Constancias - FMP UABC
+        `.trim()
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(`Failed to send email: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`)
+    }
+
+    console.log('Event rejection notification sent successfully for event:', data.eventName)
+  } catch (error) {
+    console.error('Failed to send event rejection notification:', error)
     console.error('Event data:', data)
   }
 }

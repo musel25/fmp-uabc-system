@@ -203,7 +203,7 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
         <ul className="text-sm text-amber-700 space-y-1">
           <li>• Una vez enviado a revisión, no podrás editar el evento hasta recibir una respuesta</li>
           <li>• El proceso de revisión puede tomar de 3 a 5 días hábiles</li>
-          <li>• Recibirás una notificación por correo sobre el estado de tu solicitud</li>
+          <li>• Recibirás una notificación por correo sobre el estado de tu solicitud, favor de checar spam</li>
         </ul>
       </div>
     </div>

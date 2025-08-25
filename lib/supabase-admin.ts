@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import type { Event, EventStatus } from './types'
-import { sendEventApprovedNotification, sendAdminCodesNotification } from './email'
+import { sendEventApprovedNotification, sendAdminCodesNotification, sendEventRejectedNotification } from './email'
 
 // Convert database row to Event type (admin version with profile data)
 function dbRowToEvent(row: any): Event {
@@ -198,12 +198,30 @@ export async function rejectEvent(eventId: string, reason: string, comments?: st
       .from('events')
       .update(updateData)
       .eq('id', eventId)
-      .select()
+      .select(`
+        *,
+        profiles!events_user_id_fkey (
+          name,
+          email
+        )
+      `)
       .single()
 
     if (error) throw error
 
-    return dbRowToEvent(data)
+    const rejectedEvent = dbRowToEvent(data)
+
+    // Send email notification to the event creator with rejection details
+    await sendEventRejectedNotification({
+      eventName: rejectedEvent.name,
+      userName: rejectedEvent.responsible || 'Usuario',
+      userEmail: rejectedEvent.email || '',
+      eventId: rejectedEvent.id,
+      rejectionReason: rejectedEvent.rejectionReason || reason,
+      adminComments: rejectedEvent.adminComments || comments
+    })
+
+    return rejectedEvent
   } catch (error) {
     console.error('Reject event error:', error)
     throw error
