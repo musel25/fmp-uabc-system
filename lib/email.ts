@@ -322,7 +322,12 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        to: 'serafin.idanya@uabc.edu.mx',
+        to: [
+          'serafin.idanya@uabc.edu.mx',
+          'administracion.fmptij@uabc.edu.mx',
+          'marisela.moreno@uabc.edu.mx',
+          'tggmarco@uabc.edu.mx'
+        ],
         subject: 'Códigos 8=1',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">

@@ -5,8 +5,15 @@ export async function POST(request: NextRequest) {
   try {
     const { to, subject, html, text } = await request.json()
 
+    // Normalize recipients: allow string or string[]
+    const toList: string[] = Array.isArray(to)
+      ? to.filter((v: unknown): v is string => typeof v === 'string' && v.trim().length > 0)
+      : (typeof to === 'string' && to.trim().length > 0)
+        ? [to]
+        : []
+
     // Validate required fields
-    if (!to || !subject || !html) {
+    if (!toList.length || !subject || !html) {
       return NextResponse.json(
         { error: 'Missing required fields: to, subject, html' },
         { status: 400 }
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest) {
     
     if (!resendApiKey) {
       console.log('=== EMAIL NOTIFICATION (RESEND API KEY NOT CONFIGURED) ===')
-      console.log('To:', to)
+      console.log('To:', toList)
       console.log('Subject:', subject)
       console.log('HTML Content:')
       console.log(html)
@@ -42,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Send email via Resend
     const { data, error } = await resend.emails.send({
       from: 'Sistema FMP <noreply@uabc.musel.dev>',
-      to: [to],
+      to: toList,
       subject,
       html,
       text
