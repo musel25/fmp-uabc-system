@@ -6,7 +6,7 @@ import type { UseFormReturn } from "react-hook-form"
 import type { CreateEventData } from "@/lib/types"
 
 interface EventFilesStepProps {
-  form: UseFormReturn<CreateEventData>
+  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
 }
 
 export function EventFilesStep({ form }: EventFilesStepProps) {

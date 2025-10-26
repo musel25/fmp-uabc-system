@@ -10,7 +10,7 @@ import type { CreateEventData } from "@/lib/types"
 import type { AuthUser } from "@/lib/supabase-auth"
 
 interface EventReviewStepProps {
-  form: UseFormReturn<CreateEventData>
+  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
 }
 
 export function EventReviewStep({ form }: EventReviewStepProps) {
@@ -27,14 +27,15 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "No especificada"
-    return new Date(dateString).toLocaleString("es-MX", {
+    return new Intl.DateTimeFormat("es-MX", {
+      timeZone: "America/Tijuana",
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
+    }).format(new Date(dateString))
   }
 
   return (
@@ -204,6 +205,8 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
           <li>• Una vez enviado a revisión, no podrás editar el evento hasta recibir una respuesta</li>
           <li>• El proceso de revisión puede tomar de 3 a 5 días hábiles</li>
           <li>• Recibirás una notificación por correo sobre el estado de tu solicitud, favor de checar spam</li>
+          <li>• Después de recibir la aprobación, deberán entrar nuevamente para reservar el espacio y descargar la plantilla de difusión</li>
+          <li>• Deberán recabar la lista de asistentes y tomar fotografías del evento, y subirlas desde el botón de generar constancias</li>
         </ul>
       </div>
     </div>

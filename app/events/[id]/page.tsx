@@ -102,14 +102,15 @@ export default function EventDetailPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("es-MX", {
+    return new Intl.DateTimeFormat("es-MX", {
+      timeZone: "America/Tijuana",
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
+    }).format(new Date(dateString))
   }
 
   const canEdit = event.status === "rechazado"

@@ -11,7 +11,7 @@ import { AlertTriangle } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
 
 interface EventDataStepProps {
-  form: UseFormReturn<CreateEventData>
+  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
 }
 
 export function EventDataStep({ form }: EventDataStepProps) {
@@ -24,6 +24,7 @@ export function EventDataStep({ form }: EventDataStepProps) {
   const watchClassification = watch("classification")
   const watchHasCost = watch("hasCost")
   const watchModality = watch("modality")
+  const watchIsAuthorized = watch("isAuthorized")
 
   // Clear venue when modality changes to "En línea"
   const handleModalityChange = (value: string) => {
@@ -35,6 +36,27 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
+      {/* Autorización - debe ser la primera condición */}
+      <div className="md:col-span-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isAuthorized"
+            checked={!!watchIsAuthorized}
+            onCheckedChange={(checked) => setValue("isAuthorized", !!checked)}
+          />
+          <Label htmlFor="isAuthorized">¿Ha sido su evento autorizado por subdirección o dirección?</Label>
+        </div>
+        {!watchIsAuthorized && (
+          <div className="mt-3">
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                Envié su propuesta a dirección o subdirección.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+      </div>
       <div className="md:col-span-2">
         <Label htmlFor="name">Nombre de la actividad *</Label>
         <Input

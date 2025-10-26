@@ -83,6 +83,22 @@ export default function EditEventPage() {
     loadEvent()
   }, [params.id, router, toast])
 
+  // Convierte una ISO (UTC) a 'YYYY-MM-DDTHH:mm' en zona America/Tijuana
+  const isoUTCToLocalTijuana = (iso?: string) => {
+    if (!iso) return ''
+    const date = new Date(iso)
+    const tz = 'America/Tijuana'
+    const fmt = new Intl.DateTimeFormat('en-CA', { // en-CA gives YYYY-MM-DD
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'
+    })
+    const fmtTime = new Intl.DateTimeFormat('en-GB', { // en-GB gives HH:mm
+      timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit'
+    })
+    const dateStr = fmt.format(date) // YYYY-MM-DD
+    const timeStr = fmtTime.format(date) // HH:mm
+    return `${dateStr}T${timeStr}`
+  }
+
   const handleUpdateEvent = async (data: CreateEventData, isDraft = false) => {
     if (!event) return
 
@@ -158,8 +174,8 @@ export default function EditEventPage() {
               classificationOther: event.classificationOther,
               modality: event.modality,
               venue: event.venue,
-              startDate: event.startDate,
-              endDate: event.endDate,
+              startDate: isoUTCToLocalTijuana(event.startDate),
+              endDate: isoUTCToLocalTijuana(event.endDate),
               hasCost: event.hasCost,
               costDetails: event.costDetails,
               onlineInfo: event.onlineInfo,
