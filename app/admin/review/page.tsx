@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { AdminEventReviewDrawer } from "@/components/admin/admin-event-review-drawer"
-import { Calendar, Filter, Eye, Loader2, Download } from "lucide-react"
+import { Calendar, Filter, Eye, Loader2, Download, BarChart2 } from "lucide-react"
+import Link from "next/link"
 import { getEventsForReview, getAllEvents, approveEvent, rejectEvent } from "@/lib/supabase-admin"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types"
@@ -258,10 +259,18 @@ export default function AdminReviewPage() {
               <h1 className="text-3xl font-bold text-foreground-strong">Revisión de Eventos</h1>
               <p className="text-muted-foreground mt-1">Revisa y aprueba eventos pendientes de autorización</p>
             </div>
-            <Button onClick={exportToCSV} className="btn-secondary mt-4 sm:mt-0">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
+            <div className="flex items-center gap-2 mt-4 sm:mt-0">
+              <Button asChild>
+                <Link href="/admin/analytics">
+                  <BarChart2 className="h-4 w-4 mr-2" />
+                  Analíticas
+                </Link>
+              </Button>
+              <Button onClick={exportToCSV} variant="secondary">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
