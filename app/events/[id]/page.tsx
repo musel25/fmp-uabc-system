@@ -304,9 +304,10 @@ export default function EventDetailPage() {
                         className="btn-primary w-full"
                       >
                         <Award className="h-4 w-4 mr-2" />
-                        Constancias
+                        Generar constancias (subir evidencias)
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </Button>
+                      <p className="text-[12px] text-muted-foreground -mt-2">Posterior al evento, tendrá hasta 3 semanas para subir las evidencias para solicitar constancias.</p>
 
                       <Button 
                         onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}

@@ -15,6 +15,8 @@ import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
 
+const MIN_LEAD_DAYS = 21
+
 const eventSchema = z.object({
   name: z.string().min(1, "El nombre del evento es requerido"),
   responsible: z.string().optional(),
@@ -47,6 +49,16 @@ const eventSchema = z.object({
 }, {
   message: "La sede es requerida para eventos presenciales y mixtos",
   path: ["venue"]
+}).refine((data) => {
+  // Validar anticipación mínima de 21 días para la fecha de inicio
+  const start = new Date(data.startDate)
+  const now = new Date()
+  const diffMs = start.getTime() - now.getTime()
+  const minMs = MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+  return diffMs >= minMs
+}, {
+  message: "Reagendar: no se cumple con el tiempo requerido (mínimo 21 días de anticipación)",
+  path: ["startDate"]
 })
 
 interface EventWizardProps {
@@ -264,7 +276,18 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
               type="button" 
               onClick={handleNext} 
               className="btn-primary"
-              disabled={currentStep === 1 && (form.watch('hasCost') || !form.watch('isAuthorized'))}
+              disabled={currentStep === 1 && (
+                form.watch('hasCost') ||
+                !form.watch('isAuthorized') ||
+                (() => {
+                  const sd = form.watch('startDate')
+                  if (!sd) return true
+                  const start = new Date(sd)
+                  const now = new Date()
+                  const diffMs = start.getTime() - now.getTime()
+                  return diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+                })()
+              )}
             >
               Siguiente
               <ChevronRight className="h-4 w-4 ml-2" />

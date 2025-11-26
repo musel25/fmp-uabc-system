@@ -202,11 +202,13 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <h4 className="font-medium text-amber-800 mb-2">Importante</h4>
         <ul className="text-sm text-amber-700 space-y-1">
+          <li>• Para registrar un evento, se requieren al menos 3 semanas (21 días) de anticipación respecto a la fecha de inicio</li>
           <li>• Una vez enviado a revisión, no podrás editar el evento hasta recibir una respuesta</li>
           <li>• El proceso de revisión puede tomar de 3 a 5 días hábiles</li>
           <li>• Recibirás una notificación por correo sobre el estado de tu solicitud, favor de checar spam</li>
           <li>• Después de recibir la aprobación, deberán entrar nuevamente para reservar el espacio y descargar la plantilla de difusión</li>
-          <li>• Deberán recabar la lista de asistentes y tomar fotografías del evento, y subirlas desde el botón de generar constancias</li>
+          <li>• Deberán recabar la lista de asistentes y tomar fotografías del evento, y subirlas desde el botón de "Generar constancias (subir evidencias)"</li>
+          <li>• Posterior al evento, tendrán hasta 3 semanas para subir las evidencias para solicitar constancias</li>
         </ul>
       </div>
     </div>

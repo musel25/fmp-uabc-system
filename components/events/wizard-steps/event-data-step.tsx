@@ -25,6 +25,27 @@ export function EventDataStep({ form }: EventDataStepProps) {
   const watchHasCost = watch("hasCost")
   const watchModality = watch("modality")
   const watchIsAuthorized = watch("isAuthorized")
+  const watchStartDate = watch("startDate")
+
+  const addDays = (date: Date, days: number) => {
+    const d = new Date(date)
+    d.setDate(d.getDate() + days)
+    return d
+  }
+
+  const formatLocalForInput = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  const minStartDateStr = formatLocalForInput(addDays(new Date(), 21))
+  const isBelowMinLead = (() => {
+    if (!watchStartDate) return false
+    const start = new Date(watchStartDate)
+    const now = new Date()
+    const diffMs = start.getTime() - now.getTime()
+    return diffMs < 21 * 24 * 60 * 60 * 1000
+  })()
 
   // Clear venue when modality changes to "En línea"
   const handleModalityChange = (value: string) => {
@@ -165,8 +186,18 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
       <div>
         <Label htmlFor="startDate">Fecha y hora de inicio *</Label>
-        <Input id="startDate" type="datetime-local" {...register("startDate")} className="mt-1" />
+        <Input 
+          id="startDate" 
+          type="datetime-local" 
+          min={minStartDateStr}
+          {...register("startDate")} 
+          className="mt-1" 
+        />
+        <p className="text-xs text-muted-foreground mt-1">Se requieren al menos 3 semanas (21 días) de anticipación para registrar el evento.</p>
         {errors.startDate && <p className="text-sm text-destructive mt-1">{errors.startDate.message}</p>}
+        {(!errors.startDate && isBelowMinLead) && (
+          <p className="text-sm text-destructive mt-1">Reagendar: no se cumple con el tiempo requerido (mínimo 21 días de anticipación).</p>
+        )}
       </div>
 
       <div>

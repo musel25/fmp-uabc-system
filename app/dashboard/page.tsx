@@ -226,9 +226,10 @@ export default function DashboardPage() {
                                 className="btn-primary w-full"
                               >
                                 <Award className="h-3 w-3 mr-1" />
-                                Generar constancias
+                                Generar constancias (subir evidencias)
                                 <ExternalLink className="h-2 w-2 ml-1" />
                               </Button>
+                              <p className="text-[11px] text-muted-foreground mt-1">Posterior al evento, tendrá hasta 3 semanas para subir las evidencias para solicitar constancias.</p>
                               <div className="flex gap-1">
                                 <Button 
                                   onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
