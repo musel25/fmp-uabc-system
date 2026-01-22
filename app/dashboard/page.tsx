@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { 
   Plus, 
   Calendar, 
@@ -233,9 +234,8 @@ export default function DashboardPage() {
                               <div className="flex gap-1">
                                 <Button 
                                   onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
-                                  variant="outline" 
                                   size="sm"
-                                  className="flex-1"
+                                  className="btn-primary flex-1"
                                 >
                                   <Building className="h-3 w-3 mr-1" />
                                   Reservar
@@ -243,9 +243,8 @@ export default function DashboardPage() {
                                 </Button>
                                 <Button 
                                   onClick={() => window.open('https://docs.google.com/presentation/d/1jOYJ2OPRA_KgVFCYFG4gb9DIryGcAMX-/edit?usp=sharing&ouid=100348146339426668698&rtpof=true&sd=true', '_blank')}
-                                  variant="outline" 
                                   size="sm"
-                                  className="flex-1"
+                                  className="btn-primary flex-1"
                                 >
                                   <FileSpreadsheet className="h-3 w-3 mr-1" />
                                   Template
@@ -263,6 +262,55 @@ export default function DashboardPage() {
               )}
             </TabsContent>
           </Tabs>
+          <div className="mt-8">
+            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-900">
+              <AlertTitle className="text-yellow-900">Recordatorio:</AlertTitle>
+              <AlertDescription className="text-yellow-900">
+                <ol className="list-decimal pl-5 space-y-3">
+                  <li>
+                    <p>Después de recibir la aprobación, deberán ingresar nuevamente a la plataforma para:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Reservar el espacio</li>
+                      <li>Descargar la plantilla de difusión</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <p>Durante el evento, deberán:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Recabar la lista de asistentes</li>
+                      <li>Tomar fotografías del evento</li>
+                      <li>
+                        Registrar la asistencia en el siguiente enlace:{" "}
+                        <a
+                          href="https://forms.gle/GmP7enabiaKjuxqE8"
+                          className="underline"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          https://forms.gle/GmP7enabiaKjuxqE8
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <p>
+                      Al finalizar el evento, deberán subir las evidencias desde el botón:
+                      <span className="block font-medium">
+                        &quot;Generar constancias (subir evidencias)&quot;
+                      </span>
+                    </p>
+                  </li>
+                  <li>
+                    <p className="font-medium">Plazo límite:</p>
+                    <p>
+                      Posterior al evento, contarán con un máximo de 3 semanas para subir las evidencias y solicitar las
+                      constancias.
+                    </p>
+                  </li>
+                </ol>
+              </AlertDescription>
+            </Alert>
+          </div>
         </main>
         <Footer />
       </div>
