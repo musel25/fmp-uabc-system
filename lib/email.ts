@@ -325,8 +325,7 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
         to: [
           'serafin.idanya@uabc.edu.mx',
           'administracion.fmptij@uabc.edu.mx',
-          'marisela.moreno@uabc.edu.mx',
-          'tggmarco@uabc.edu.mx'
+          'marisela.moreno@uabc.edu.mx'
         ],
         subject: 'Códigos 8=1',
         html: `
