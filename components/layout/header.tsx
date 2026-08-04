@@ -13,11 +13,19 @@ export const COORDINATION_TITLE = "Extensión de la cultura y divulgación de la
 export function InstitutionalIdentity({
   className,
   tone = "onDark",
+  asHeading = false,
 }: {
   className?: string
   tone?: "onDark" | "onLight"
+  /**
+   * En el acceso este bloque sí es el encabezado de la página. Dentro de la
+   * aplicación es un membrete que se repite, y el `h1` le toca al título de
+   * cada pantalla.
+   */
+  asHeading?: boolean
 }) {
   const onDark = tone === "onDark"
+  const Title = asHeading ? "h1" : "p"
 
   return (
     <div className={cn("text-center", className)}>
@@ -30,14 +38,14 @@ export function InstitutionalIdentity({
         UABC · Facultad de Medicina y Psicología
       </p>
 
-      <h1
+      <Title
         className={cn(
           "mt-2 text-balance font-display text-xl leading-tight font-semibold sm:text-2xl",
           onDark ? "text-white" : "text-ink",
         )}
       >
         {COORDINATION_TITLE}
-      </h1>
+      </Title>
 
       <p
         className={cn(

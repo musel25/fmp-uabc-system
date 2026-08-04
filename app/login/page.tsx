@@ -213,7 +213,7 @@ function LoginForm() {
     }}>
       <div className="flex-1 flex flex-col justify-center p-4">
         <div className="w-full space-y-12">
-          <InstitutionalIdentity className="px-4" />
+          <InstitutionalIdentity className="px-4" asHeading />
           <div className="max-w-md mx-auto">
           <Card className="w-full card-uabc border-0 bg-white shadow-2xl">
         <CardHeader className="space-y-4 text-center">
@@ -359,7 +359,7 @@ export default function LoginPage() {
       }}>
         <div className="flex-1 flex flex-col justify-center p-4">
           <div className="w-full space-y-12">
-            <InstitutionalIdentity className="px-4" />
+            <InstitutionalIdentity className="px-4" asHeading />
             <div className="max-w-md mx-auto">
               <Card className="w-full card-uabc border-0 bg-white shadow-2xl">
                 <CardHeader className="text-center space-y-4">

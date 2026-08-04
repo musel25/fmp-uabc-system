@@ -241,7 +241,9 @@ export default function AdminAnalyticsPage() {
     )
   }
 
-  const scopeLabel = scope === ALL ? "todos los ciclos" : `el ciclo ${scope}`
+  // "de todos los ciclos" pero "del ciclo 2026-1" — la contracción es obligatoria.
+  const scopeHeading =
+    scope === ALL ? "Resumen de todos los ciclos" : `Resumen del ciclo ${scope}`
 
   return (
     <ProtectedRoute requireAdmin>
@@ -305,9 +307,7 @@ export default function AdminAnalyticsPage() {
                 muestran siempre la serie completa de ciclos. */}
             <section>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="font-display text-lg font-semibold text-ink">
-                  Resumen de {scopeLabel}
-                </h2>
+                <h2 className="font-display text-lg font-semibold text-ink">{scopeHeading}</h2>
                 <div className="flex items-center gap-2">
                   <label htmlFor="scope" className="text-sm text-muted-foreground">
                     Ciclo escolar
