@@ -12,7 +12,18 @@ import { Logo } from "@/components/ui/logo"
 import { useToast } from "@/hooks/use-toast"
 import { signIn, signUp, getAuthUser } from "@/lib/supabase-auth"
 import { Footer } from "@/components/layout/footer"
+import { InstitutionalIdentity } from "@/components/layout/header"
 import { Eye, EyeOff } from "lucide-react"
+
+/** Supabase devuelve el error con formas distintas según el fallo. */
+function messageFrom(error: unknown): string {
+  if (!error) return ""
+  if (typeof error === "string") return error
+  if (typeof error === "object" && "message" in error) {
+    return String((error as { message?: unknown }).message ?? "")
+  }
+  return String(error)
+}
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -64,7 +75,7 @@ function LoginForm() {
           let errorDescription = "Error al crear la cuenta"
           
           // Handle specific signup error types - check both message and error string
-          const errorMessage = error.message || error.toString() || ''
+          const errorMessage = messageFrom(error)
           
           if (errorMessage.includes("User already registered") || errorMessage.includes("already_registered")) {
             errorTitle = "Email ya registrado"
@@ -115,7 +126,7 @@ function LoginForm() {
           let errorDescription = "Email o contraseña incorrectos"
           
           // Handle specific error types - check both message and error string
-          const errorMessage = error.message || error.toString() || JSON.stringify(error) || ''
+          const errorMessage = messageFrom(error)
           
           // Normalize the error message to lowercase for easier matching
           const normalizedError = errorMessage.toLowerCase()
@@ -198,27 +209,20 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{
-      background: 'linear-gradient(135deg, #006341 0%, #007850 50%, #008a60 100%)'
+      background: 'linear-gradient(160deg, #024731 0%, #00723F 55%, #056037 100%)'
     }}>
       <div className="flex-1 flex flex-col justify-center p-4">
         <div className="w-full space-y-12">
-          <div className="text-center text-white space-y-2 px-4 -mt-15">
-            <h1 className="text-2xl font-bold leading-tight">
-              Extensión de la cultura y divulgación de la ciencia
-            </h1>
-            <p className="text-white/90 text-sm">
-              Dra. Naysin Yaheko Pardo Buitimea
-            </p>
-          </div>
+          <InstitutionalIdentity className="px-4" />
           <div className="max-w-md mx-auto">
-          <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
-        <CardHeader className="text-center space-y-4">
-          <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+          <Card className="w-full card-uabc border-0 bg-white shadow-2xl">
+        <CardHeader className="space-y-4 text-center">
+          <Logo className="justify-center" tone="onLight" />
           <div>
-            <CardTitle className="text-2xl font-bold text-foreground-strong">
-              {isSignUp ? "Crear Cuenta" : "Iniciar Sesión"}
+            <CardTitle className="font-display text-2xl font-semibold text-ink">
+              {isSignUp ? "Crear cuenta" : "Iniciar sesión"}
             </CardTitle>
-            <CardDescription className="text-muted-foreground">Sistema de Registro y Constancias</CardDescription>
+            <CardDescription>Registro de eventos y constancias</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -355,21 +359,14 @@ export default function LoginPage() {
       }}>
         <div className="flex-1 flex flex-col justify-center p-4">
           <div className="w-full space-y-12">
-            <div className="text-center text-white space-y-2 px-4 -mt-15">
-              <h1 className="text-2xl font-bold leading-tight">
-                Extensión de la cultura y divulgación de la ciencia
-              </h1>
-              <p className="text-white/90 text-sm">
-                Dra. Naysin Yaheko Pardo Buitimea
-              </p>
-            </div>
+            <InstitutionalIdentity className="px-4" />
             <div className="max-w-md mx-auto">
-              <Card className="w-full card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
+              <Card className="w-full card-uabc border-0 bg-white shadow-2xl">
                 <CardHeader className="text-center space-y-4">
-                  <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+                  <Logo className="justify-center" tone="onLight" />
                   <div>
-                    <CardTitle className="text-2xl font-bold text-foreground-strong">
-                      Cargando...
+                    <CardTitle className="font-display text-2xl font-semibold text-ink">
+                      Cargando…
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">Sistema de Registro y Constancias</CardDescription>
                   </div>

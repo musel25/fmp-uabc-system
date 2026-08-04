@@ -1,43 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ProtectedRoute } from "@/components/layout/protected-route"
-import { Navbar } from "@/components/layout/navbar"
+import { AppShell } from "@/components/layout/app-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { 
-  Plus, 
-  Calendar, 
-  MapPin, 
-  Eye, 
-  Edit, 
-  Loader2, 
-  ExternalLink, 
-  Award, 
-  Building, 
-  FileSpreadsheet 
-} from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { StatCard } from "@/components/ui/stat-card"
+import { EventCard } from "@/components/events/event-card"
+import { ProcessRail } from "@/components/workflow/process-guide"
+import { CalendarPlus, CalendarX2, Loader2, Search, TriangleAlert } from "lucide-react"
 import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
+import { nextStepFor } from "@/lib/workflow"
 import type { Event, EventStatus } from "@/lib/types"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
+
+type Tab = "todos" | "en_revision" | "aprobado" | "rechazado"
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([])
-  const [activeTab, setActiveTab] = useState<string>("todos")
+  const [activeTab, setActiveTab] = useState<Tab>("todos")
+  const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
+    let mounted = true
+
     const loadEvents = async () => {
       try {
         setIsLoading(true)
@@ -50,270 +45,240 @@ export default function DashboardPage() {
         }
 
         const userEvents = await getUserEvents(user.id)
-        setEvents(userEvents)
-      } catch (error) {
-        console.error('Load events error:', error)
-        setError('Error al cargar los eventos')
+        if (mounted) setEvents(userEvents)
+      } catch (err) {
+        console.error("Load events error:", err)
+        if (!mounted) return
+        setError("No se pudieron cargar tus eventos.")
         toast({
-          title: "Error",
-          description: "No se pudieron cargar los eventos",
+          title: "No se pudieron cargar tus eventos",
+          description: "Revisa tu conexión y vuelve a intentarlo.",
           variant: "destructive",
         })
       } finally {
-        setIsLoading(false)
+        if (mounted) setIsLoading(false)
       }
     }
 
     loadEvents()
-  }, [])
-
-  const filterEventsByStatus = (status?: EventStatus) => 
-    status ? events.filter(event => event.status === status) : events
-
-  const getFilteredEvents = () => {
-    switch (activeTab) {
-      case "revision": return filterEventsByStatus("en_revision")
-      case "aprobado": return filterEventsByStatus("aprobado")
-      case "rechazado": return filterEventsByStatus("rechazado")
-      default: return events.filter(event => event.status !== "borrador")
+    return () => {
+      mounted = false
     }
-  }
+  }, [router, toast])
 
-  const filteredEvents = getFilteredEvents()
+  const counts = useMemo(() => {
+    const byStatus = (status: EventStatus) => events.filter((e) => e.status === status).length
+    return {
+      todos: events.length,
+      en_revision: byStatus("en_revision"),
+      aprobado: byStatus("aprobado"),
+      rechazado: byStatus("rechazado"),
+    }
+  }, [events])
 
-  const EmptyState = ({ status }: { status?: string }) => (
-    <div className="text-center">
-      <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-        <Calendar className="h-12 w-12 text-muted-foreground" />
-      </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        {status ? `No tienes eventos ${status}` : "No tienes eventos"}
-      </h3>
-      <p className="text-muted-foreground mb-6">
-        {!status || status === "todos"
-          ? "Crea tu primer evento para comenzar"
-          : `Cuando tengas eventos ${status}, aparecerán aquí`}
-      </p>
-      {(!status || status === "todos") && (
-        <Button onClick={() => router.push("/events/new")} className="btn-primary">
-          <Plus className="h-4 w-4 mr-2" />
-          Crear evento
-        </Button>
-      )}
-    </div>
+  /** Eventos aprobados que ya terminaron y siguen sin evidencias en plazo. */
+  const pendingEvidence = useMemo(
+    () =>
+      events.filter((e) => {
+        const step = nextStepFor(e)
+        return step.phaseId === "evidencias"
+      }).length,
+    [events],
   )
+
+  const filteredEvents = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return events
+      .filter((e) => (activeTab === "todos" ? true : e.status === activeTab))
+      .filter((e) =>
+        term
+          ? e.name.toLowerCase().includes(term) ||
+            e.venue?.toLowerCase().includes(term) ||
+            e.program.toLowerCase().includes(term)
+          : true,
+      )
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+  }, [events, activeTab, search])
+
+  /** Fase del proceso a resaltar en la ruta: la del evento más urgente. */
+  const activePhaseId = useMemo(() => {
+    if (events.length === 0) return "autorizacion"
+    const urgent = events.find((e) => nextStepFor(e).tone === "urgent")
+    const target = urgent ?? events.find((e) => e.status === "aprobado") ?? events[0]
+    return nextStepFor(target).phaseId
+  }, [events])
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <Navbar showAdminToggle />
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground-strong">Mis Eventos</h1>
-              <p className="text-muted-foreground mt-1">Gestiona tus eventos y solicitudes de constancias</p>
-            </div>
-            <Button onClick={() => router.push("/events/new")} className="btn-primary mt-4 sm:mt-0">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear evento
+      <AppShell showAdminToggle>
+        <PageHeader
+          eyebrow="Panel del organizador"
+          title="Mis eventos"
+          description="Registra actividades, sigue su revisión y entrega las evidencias para las constancias."
+          actions={
+            <Button asChild className="btn-primary">
+              <Link href="/events/new">
+                <CalendarPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Registrar evento
+              </Link>
             </Button>
+          }
+        />
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Eventos registrados" value={counts.todos} />
+          <StatCard
+            label="En revisión"
+            value={counts.en_revision}
+            tone="pending"
+            caption="Respuesta en 3 a 5 días hábiles"
+          />
+          <StatCard label="Aprobados" value={counts.aprobado} tone="approved" />
+          <StatCard
+            label="Evidencias pendientes"
+            value={pendingEvidence}
+            tone={pendingEvidence > 0 ? "pending" : "neutral"}
+            caption={
+              pendingEvidence > 0
+                ? "Eventos ya realizados sin evidencias"
+                : "Nada pendiente por entregar"
+            }
+          />
+        </div>
+
+        <ProcessRail activePhaseId={activePhaseId} className="mt-6" />
+
+        <div className="mt-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+              <TabsList>
+                <TabsTrigger value="todos">Todos ({counts.todos})</TabsTrigger>
+                <TabsTrigger value="en_revision">En revisión ({counts.en_revision})</TabsTrigger>
+                <TabsTrigger value="aprobado">Aprobados ({counts.aprobado})</TabsTrigger>
+                <TabsTrigger value="rechazado">Rechazados ({counts.rechazado})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="relative lg:w-72">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre, sede o programa"
+                aria-label="Buscar en mis eventos"
+                className="bg-card pl-9"
+              />
+            </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="todos">
-                Todos ({events.filter(event => event.status !== "borrador").length})
-              </TabsTrigger>
-              <TabsTrigger value="revision">
-                En revisión ({filterEventsByStatus("en_revision").length})
-              </TabsTrigger>
-              <TabsTrigger value="aprobado">
-                Aprobado ({filterEventsByStatus("aprobado").length})
-              </TabsTrigger>
-              <TabsTrigger value="rechazado">
-                Rechazado ({filterEventsByStatus("rechazado").length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value={activeTab} className="flex-1 flex flex-col mt-6">
-              {isLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                    <span className="text-muted-foreground">Cargando eventos...</span>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                      <Calendar className="h-12 w-12 text-red-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar eventos</h3>
-                    <p className="text-muted-foreground mb-6">{error}</p>
-                    <Button onClick={() => window.location.reload()} variant="outline">
-                      Intentar de nuevo
-                    </Button>
-                  </div>
-                </div>
-              ) : filteredEvents.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <EmptyState status={activeTab === "todos" ? undefined : activeTab} />
-                </div>
-              ) : (
-                <div className="flex-1 overflow-auto">
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 h-fit">
-                  {filteredEvents.map((event) => (
-                    <Card key={event.id} className="card-uabc hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-lg font-semibold line-clamp-2">{event.name}</CardTitle>
-                          <StatusBadge status={event.status} />
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(event.startDate).toLocaleDateString("es-MX", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {event.venue}
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {event.program}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {event.type}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/events/${event.id}`)}
-                              className="flex-1"
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Ver
-                            </Button>
-                            {event.status === "rechazado" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/events/${event.id}/edit`)}
-                                className="flex-1"
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Editar
-                              </Button>
-                            )}
-                          </div>
-                          
-                          {event.status === "aprobado" && (
-                            <div className="space-y-1">
-                              <Button 
-                                onClick={() => window.open('https://forms.gle/Dy5Kxns3DxijYzfh6', '_blank')}
-                                size="sm"
-                                className="btn-primary w-full"
-                              >
-                                <Award className="h-3 w-3 mr-1" />
-                                Generar constancias (subir evidencias)
-                                <ExternalLink className="h-2 w-2 ml-1" />
-                              </Button>
-                              <p className="text-[11px] text-muted-foreground mt-1">Posterior al evento, tendrá hasta 3 semanas para subir las evidencias para solicitar constancias.</p>
-                              <div className="flex gap-1">
-                                <Button 
-                                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
-                                  size="sm"
-                                  className="btn-primary flex-1"
-                                >
-                                  <Building className="h-3 w-3 mr-1" />
-                                  Reservar
-                                  <ExternalLink className="h-2 w-2 ml-1" />
-                                </Button>
-                                <Button 
-                                  onClick={() => window.open('https://docs.google.com/presentation/d/1jOYJ2OPRA_KgVFCYFG4gb9DIryGcAMX-/edit?usp=sharing&ouid=100348146339426668698&rtpof=true&sd=true', '_blank')}
-                                  size="sm"
-                                  className="btn-primary flex-1"
-                                >
-                                  <FileSpreadsheet className="h-3 w-3 mr-1" />
-                                  Template
-                                  <ExternalLink className="h-2 w-2 ml-1" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-          <div className="mt-8">
-            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-900">
-              <AlertTitle className="text-yellow-900">Recordatorio:</AlertTitle>
-              <AlertDescription className="text-yellow-900">
-                <ol className="list-decimal pl-5 space-y-3">
-                  <li>
-                    <p>Después de recibir la aprobación, deberán ingresar nuevamente a la plataforma para:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Reservar el espacio</li>
-                      <li>Descargar la plantilla de difusión</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <p>Durante el evento, deberán:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Recabar la lista de asistentes</li>
-                      <li>Tomar fotografías del evento</li>
-                      <li>
-                        Registrar la asistencia en el siguiente enlace:{" "}
-                        <a
-                          href="https://forms.gle/GmP7enabiaKjuxqE8"
-                          className="underline"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          https://forms.gle/GmP7enabiaKjuxqE8
-                        </a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <p>
-                      Al finalizar el evento, deberán subir las evidencias desde el botón:
-                      <span className="block font-medium">
-                        &quot;Generar constancias (subir evidencias)&quot;
-                      </span>
-                    </p>
-                  </li>
-                  <li>
-                    <p className="font-medium">Plazo límite:</p>
-                    <p>
-                      Posterior al evento, contarán con un máximo de 3 semanas para subir las evidencias y solicitar las
-                      constancias.
-                    </p>
-                  </li>
-                </ol>
-              </AlertDescription>
-            </Alert>
+          <div className="mt-5">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
+                <p className="mt-3 text-sm text-muted-foreground">Cargando tus eventos…</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] py-16 text-center">
+                <TriangleAlert
+                  className="h-6 w-6 text-[var(--state-rejected)]"
+                  aria-hidden="true"
+                />
+                <h2 className="mt-3 font-display text-base font-semibold text-ink">{error}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  El servidor no respondió. Vuelve a cargar la página para reintentar.
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4 bg-card"
+                  onClick={() => window.location.reload()}
+                >
+                  Volver a cargar
+                </Button>
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              <EmptyState
+                tab={activeTab}
+                searching={search.trim().length > 0}
+                onClearSearch={() => setSearch("")}
+              />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            )}
           </div>
-        </main>
-        <Footer />
-      </div>
+        </div>
+      </AppShell>
     </ProtectedRoute>
+  )
+}
+
+function EmptyState({
+  tab,
+  searching,
+  onClearSearch,
+}: {
+  tab: Tab
+  searching: boolean
+  onClearSearch: () => void
+}) {
+  if (searching) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
+        <Search className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+        <h2 className="mt-3 font-display text-base font-semibold text-ink">
+          Ningún evento coincide con la búsqueda
+        </h2>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          Prueba con otro nombre, sede o programa.
+        </p>
+        <Button variant="outline" className="mt-4 bg-card" onClick={onClearSearch}>
+          Limpiar búsqueda
+        </Button>
+      </div>
+    )
+  }
+
+  const copy: Record<Tab, { title: string; body: string }> = {
+    todos: {
+      title: "Aún no registras ningún evento",
+      body: "Registra tu primera actividad para comenzar el trámite. Necesitas la autorización de dirección o subdirección y al menos tres semanas de anticipación.",
+    },
+    en_revision: {
+      title: "No tienes eventos en revisión",
+      body: "Los eventos que envíes a la coordinación aparecerán aquí mientras se revisan.",
+    },
+    aprobado: {
+      title: "Todavía no tienes eventos aprobados",
+      body: "Cuando la coordinación autorice un evento, lo verás aquí junto con los pasos que siguen.",
+    },
+    rechazado: {
+      title: "No tienes eventos rechazados",
+      body: "Si un evento requiere cambios, aparecerá aquí con los comentarios de la coordinación.",
+    },
+  }
+
+  const { title, body } = copy[tab]
+
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
+      <CalendarX2 className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+      <h2 className="mt-3 font-display text-base font-semibold text-ink">{title}</h2>
+      <p className="mt-1.5 max-w-md text-sm text-pretty text-muted-foreground">{body}</p>
+      {tab === "todos" && (
+        <Button asChild className="btn-primary mt-5">
+          <Link href="/events/new">
+            <CalendarPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+            Registrar evento
+          </Link>
+        </Button>
+      )}
+    </div>
   )
 }

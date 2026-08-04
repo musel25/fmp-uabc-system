@@ -3,104 +3,215 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================================
+   UABC — Sistema de Registro y Constancias · FMP
+   Design tokens.
+
+   Brand colours are taken verbatim from the official
+   "Manual de Identidad Gráfica UABC 2022":
+     Verde UABC        PANTONE 356          #00723F   (colour cardinal)
+     Ocre              PANTONE 131          #DD971A
+     Verde claro       PANTONE 369          #50B848
+     Amarillo          PANTONE 124          #FEBE10
+     Verde profundo    PANTONE 3435         #024731
+     Ocre profundo     PANTONE 132          #B08208
+     Azul              PANTONE REFLEX BLUE  #20419A
+   ============================================================================ */
+
 :root {
-  /* UABC Brand Colors */
-  --color-primary: #006341; /* Verde UABC */
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #cc8a00; /* Ocre/Dorado UABC */
-  --color-secondary-foreground: #ffffff;
+  /* --- Brand ------------------------------------------------------------- */
+  --uabc-green: #00723f;
+  --uabc-green-deep: #024731;
+  --uabc-green-light: #50b848;
+  --uabc-ocre: #dd971a;
+  --uabc-ocre-deep: #b08208;
+  --uabc-yellow: #febe10;
+  --uabc-blue: #20419a;
 
-  /* Neutral Colors */
-  --color-foreground-strong: #0f172a;
-  --color-foreground: #334155;
-  --color-muted-foreground: #64748b;
-  --color-background: #ffffff;
-  --color-background-soft: #f8fafc;
-  --color-border: #e2e8f0;
+  /* Verde tint scale — derived from PANTONE 356 */
+  --green-50: #eef6f1;
+  --green-100: #d6ebdf;
+  --green-200: #aed7c0;
+  --green-300: #7cbd9b;
+  --green-400: #429c73;
+  --green-500: #00723f;
+  --green-600: #056037;
+  --green-700: #024731;
+  --green-800: #023626;
+  --green-900: #01251a;
 
-  /* State Colors */
-  --color-success: #16a34a;
-  --color-success-foreground: #ffffff;
-  --color-warning: #f59e0b;
-  --color-warning-foreground: #ffffff;
-  --color-destructive: #b91c1c;
-  --color-destructive-foreground: #ffffff;
-  --color-info: #0ea5e9;
-  --color-info-foreground: #ffffff;
+  /* Ocre tint scale — derived from PANTONE 131 */
+  --ocre-50: #fdf6e8;
+  --ocre-100: #faeaca;
+  --ocre-200: #f3d491;
+  --ocre-300: #ebb954;
+  --ocre-400: #dd971a;
+  --ocre-500: #c88a13;
+  --ocre-600: #b08208;
+  --ocre-700: #8a6608;
+  --ocre-800: #664c0a;
 
-  /* shadcn/ui compatible variables */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #006341;
+  /* --- Neutrals (tinted toward the institutional green) ------------------ */
+  --paper: #ffffff;
+  --surface: #f4f7f4;
+  --surface-2: #eaf0ea;
+  --line: #dde5de;
+  --line-strong: #c4d1c6;
+  --ink: #0f1f18;
+  --ink-2: #34473c;
+  --ink-3: #5f7268;
+
+  /* --- Status (reserved — never reused as a chart series) ---------------- */
+  --state-approved: #056037;
+  --state-approved-bg: #e4f2e9;
+  --state-approved-line: #b7dcc6;
+  --state-pending: #8a6608;
+  --state-pending-bg: #fbf1da;
+  --state-pending-line: #eeda9f;
+  --state-rejected: #a32219;
+  --state-rejected-bg: #fbe9e7;
+  --state-rejected-line: #f0c2bd;
+  --state-info: #20419a;
+  --state-info-bg: #e9edf8;
+  --state-info-line: #c1cdec;
+
+  /* --- Chart series — validated (adjacent pairs, light surface #FFFFFF)
+         worst CVD ΔE 11.1 · worst normal-vision ΔE 20.9 · all ≥ 3:1 -------- */
+  --series-1: #00723f;
+  --series-2: #b08208;
+  --series-3: #c03a78;
+  --series-4: #3a5fc4;
+  --chart-surface: #ffffff;
+  --chart-grid: #e6ece7;
+
+  /* --- Elevation --------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgb(15 31 24 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(15 31 24 / 0.07), 0 1px 2px -1px rgb(15 31 24 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(15 31 24 / 0.08), 0 2px 4px -2px rgb(15 31 24 / 0.05);
+  --shadow-lg: 0 12px 28px -8px rgb(15 31 24 / 0.14), 0 4px 10px -4px rgb(15 31 24 / 0.07);
+
+  /* --- shadcn/ui contract ------------------------------------------------ */
+  --background: var(--surface);
+  --foreground: var(--ink-2);
+  --card: var(--paper);
+  --card-foreground: var(--ink-2);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink-2);
+  --primary: var(--uabc-green);
   --primary-foreground: #ffffff;
-  --secondary: #cc8a00;
-  --secondary-foreground: #ffffff;
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: #f1f5f9;
-  --accent-foreground: #334155;
-  --destructive: #dc2626;
+  --secondary: var(--uabc-ocre);
+  --secondary-foreground: #3a2a02;
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--green-50);
+  --accent-foreground: var(--green-700);
+  --destructive: #a32219;
   --destructive-foreground: #ffffff;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--uabc-green);
+
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--series-3);
+  --chart-4: var(--series-4);
+  --chart-5: var(--uabc-green-light);
+
+  --radius: 0.5rem;
+
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink-2);
+  --sidebar-primary: var(--uabc-green);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--green-50);
+  --sidebar-accent-foreground: var(--green-700);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--uabc-green);
+
+  /* Legacy aliases kept so existing utility classes keep resolving */
+  --color-foreground-strong: var(--ink);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #4ade80;
-  --primary-foreground: #006341;
-  --secondary: #fbbf24;
-  --secondary-foreground: #cc8a00;
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --paper: #17231d;
+  --surface: #0f1a15;
+  --surface-2: #1e2c25;
+  --line: #2a3a32;
+  --line-strong: #3b4e44;
+  --ink: #f0f5f1;
+  --ink-2: #dbe5de;
+  --ink-3: #9aada2;
+
+  --state-approved: #6cc396;
+  --state-approved-bg: #122b1f;
+  --state-approved-line: #24503a;
+  --state-pending: #e0b458;
+  --state-pending-bg: #2c2312;
+  --state-pending-line: #574325;
+  --state-rejected: #ef8b81;
+  --state-rejected-bg: #2e1614;
+  --state-rejected-line: #5c2b26;
+  --state-info: #93a9e4;
+  --state-info-bg: #171f36;
+  --state-info-line: #2e3d63;
+
+  /* Chart series — dark steps of the same four hues,
+     validated against the dark chart surface (#141f1a). */
+  --series-1: #3fa46e;
+  --series-2: #bc8c1b;
+  --series-3: #d65a91;
+  --series-4: #5e86dd;
+  --chart-surface: #141f1a;
+  --chart-grid: #2a3a32;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 28px -8px rgb(0 0 0 / 0.6), 0 4px 10px -4px rgb(0 0 0 / 0.45);
+
+  --background: var(--surface);
+  --foreground: var(--ink-2);
+  --card: var(--paper);
+  --card-foreground: var(--ink-2);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink-2);
+  --primary: #3fa46e;
+  --primary-foreground: #062516;
+  --secondary: #e0b458;
+  --secondary-foreground: #241a04;
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-3);
+  --accent: #1e3229;
+  --accent-foreground: #b9dcc8;
+  --destructive: #ef8b81;
+  --destructive-foreground: #2e1614;
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: #3fa46e;
+
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--series-3);
+  --chart-4: var(--series-4);
+  --chart-5: #7cbd9b;
+
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink-2);
+  --sidebar-primary: #3fa46e;
+  --sidebar-primary-foreground: #062516;
+  --sidebar-accent: #1e3229;
+  --sidebar-accent-foreground: #b9dcc8;
+  --sidebar-border: var(--line);
+  --sidebar-ring: #3fa46e;
+
+  --color-foreground-strong: var(--ink);
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -120,15 +231,33 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-foreground-strong: var(--ink);
+
+  --color-uabc-green: var(--uabc-green);
+  --color-uabc-green-deep: var(--uabc-green-deep);
+  --color-uabc-ocre: var(--uabc-ocre);
+  --color-uabc-ocre-deep: var(--uabc-ocre-deep);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -143,45 +272,223 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv05" 1, "ss01" 1;
+  }
+
+  /* Display face — used with restraint: page titles and section headings only. */
+  h1,
+  h2,
+  .font-display {
+    font-family: var(--font-serif);
+    letter-spacing: -0.015em;
+  }
+
+  h1 {
+    @apply text-ink;
+  }
+
+  /* Dates, semester codes, counts, deadlines — the "record" voice. */
+  .font-data {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--green-200);
+    color: var(--green-900);
   }
 }
 
 @layer components {
-  /* UABC Button Styles */
+  /* --- Buttons ---------------------------------------------------------- */
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary;
+    @apply bg-primary text-primary-foreground shadow-xs transition-colors hover:bg-[var(--green-600)] focus-visible:ring-primary;
   }
 
   .btn-secondary {
-    @apply bg-[#CC8A00] text-white hover:bg-[#CC8A00]/90 focus-visible:ring-[#CC8A00];
+    @apply bg-[var(--uabc-ocre)] text-[#3a2a02] shadow-xs transition-colors hover:bg-[var(--ocre-500)];
   }
 
   .btn-tertiary {
-    @apply border border-border bg-background hover:bg-accent hover:text-accent-foreground;
+    @apply border border-border bg-card text-foreground transition-colors hover:bg-accent hover:text-accent-foreground;
   }
 
-  /* Status Chips */
+  /* --- Status chips ------------------------------------------------------ */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  }
+
   .chip-aprobado {
-    @apply bg-green-100 text-green-800 border-green-200;
+    background: var(--state-approved-bg);
+    color: var(--state-approved);
+    border-color: var(--state-approved-line);
   }
 
   .chip-revision {
-    @apply bg-amber-100 text-amber-800 border-amber-200;
+    background: var(--state-pending-bg);
+    color: var(--state-pending);
+    border-color: var(--state-pending-line);
   }
 
   .chip-rechazado {
-    @apply bg-red-100 text-red-800 border-red-200;
+    background: var(--state-rejected-bg);
+    color: var(--state-rejected);
+    border-color: var(--state-rejected-line);
   }
 
+  .chip-borrador {
+    background: var(--surface-2);
+    color: var(--ink-3);
+    border-color: var(--line);
+  }
 
-  /* UABC Card Styles */
+  /* --- Surfaces ---------------------------------------------------------- */
   .card-uabc {
-    @apply bg-card text-card-foreground rounded-xl border shadow-sm p-6;
+    @apply rounded-lg border border-border bg-card text-card-foreground;
+    box-shadow: var(--shadow-xs);
   }
 
   .modal-uabc {
-    @apply bg-card text-card-foreground rounded-2xl border shadow-lg p-8;
+    @apply rounded-xl border border-border bg-card p-8 text-card-foreground;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* A sheet of institutional paper: the reading surface for long-form text. */
+  .sheet-uabc {
+    @apply rounded-lg border border-border bg-card;
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* The ocre hairline that ties every institutional band back to the brand. */
+  .rule-uabc {
+    background: linear-gradient(
+      90deg,
+      var(--uabc-ocre) 0%,
+      var(--uabc-ocre) 32%,
+      var(--uabc-green-light) 32%,
+      var(--uabc-green-light) 46%,
+      var(--line) 46%
+    );
+  }
+
+  /* Small uppercase label used above groups of fields and metrics. */
+  .eyebrow {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  /* Definition-list row used across event detail + review. */
+  .field-row {
+    @apply flex flex-col gap-0.5 border-b border-border/70 py-3 last:border-0 sm:flex-row sm:items-baseline sm:gap-4;
+  }
+
+  .field-label {
+    @apply shrink-0 text-sm font-medium text-muted-foreground sm:w-44;
+  }
+
+  .field-value {
+    @apply min-w-0 text-sm text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/* ============================================================================
+   Print — "Imprimir" on the event detail page produces a clean one-page record.
+   ============================================================================ */
+@media print {
+  @page {
+    size: letter;
+    margin: 14mm 14mm 16mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10.5pt;
+  }
+
+  .no-print,
+  nav,
+  footer,
+  button,
+  [role="dialog"],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Collapse the screen grid into a single readable column. */
+  .print-flow {
+    display: block !important;
+  }
+
+  .print-flow > * {
+    width: 100% !important;
+    max-width: none !important;
+    break-inside: avoid;
+  }
+
+  .card-uabc,
+  .sheet-uabc {
+    border: 1px solid #c9c9c9 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 8pt;
+  }
+
+  .chip {
+    border: 1px solid #666 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #555;
+    word-break: break-all;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

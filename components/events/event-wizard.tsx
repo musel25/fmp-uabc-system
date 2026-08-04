@@ -5,17 +5,16 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Form } from "@/components/ui/form"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { EventDataStep } from "./wizard-steps/event-data-step"
 import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
-
-const MIN_LEAD_DAYS = 21
+import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import { cn } from "@/lib/utils"
 
 const eventSchema = z.object({
   name: z.string().min(1, "El nombre del evento es requerido"),
@@ -62,8 +61,8 @@ const eventSchema = z.object({
 })
 
 interface EventWizardProps {
-  onSubmit: (data: CreateEventData, isDraft?: boolean) => void
-  initialData?: Partial<CreateEventData>
+  onSubmit: (data: CreateEventData) => void
+  initialData?: Partial<CreateEventData & { isAuthorized: boolean }>
 }
 
 export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
@@ -125,9 +124,9 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   }
 
   const steps = [
-    { number: 1, title: "Datos del Evento", description: "Información básica" },
-    { number: 2, title: "Programa y Ponentes", description: "Detalles del evento" },
-    { number: 3, title: "Revisión", description: "Confirmar información" },
+    { number: 1, title: "Datos del evento", description: "Fechas, sede y clasificación" },
+    { number: 2, title: "Programa y ponentes", description: "Descripción y semblanzas" },
+    { number: 3, title: "Revisión", description: "Confirmar y enviar" },
   ]
 
   const handleNext = async () => {
@@ -140,8 +139,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       ]
       
       const isValid = await form.trigger(fieldsToValidate)
-      console.log('Step 1 validation:', isValid, 'Errors:', form.formState.errors)
-      
+
       // Verificar autorización y detener navegación si NO está autorizado
       const isAuthorized = form.watch('isAuthorized')
       if (!isAuthorized) {
@@ -161,8 +159,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     // For step 2, validate program details
     else if (currentStep === 2) {
       const isValid = await form.trigger(['programDetails', 'speakerCvs'])
-      console.log('Step 2 validation:', isValid, 'Errors:', form.formState.errors)
-      
+
       if (isValid) {
         setCurrentStep(3)
       }
@@ -175,7 +172,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     }
   }
 
-  const handleSubmit = async (isDraft = false) => {
+  const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
       const raw = form.getValues()
@@ -185,7 +182,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
         startDate: localTijuanaToUTC(raw.startDate),
         endDate: localTijuanaToUTC(raw.endDate),
       }
-      await onSubmit(data, isDraft)
+      await onSubmit(data)
     } finally {
       setIsSubmitting(false)
     }
@@ -208,93 +205,126 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     }
   }
 
+  /* Por qué no se puede avanzar todavía. Antes el botón sólo se apagaba. */
+  const blockedReason = (() => {
+    if (currentStep !== 1) return null
+    if (!form.watch("isAuthorized"))
+      return "Marca la casilla de autorización cuando dirección o subdirección haya aprobado la propuesta."
+    if (form.watch("hasCost"))
+      return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
+    const startDate = form.watch("startDate")
+    if (!startDate) return "Indica la fecha y hora de inicio."
+    const diffMs = new Date(startDate).getTime() - Date.now()
+    if (diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000)
+      return `La fecha de inicio debe estar al menos ${MIN_LEAD_DAYS} días después de hoy.`
+    return null
+  })()
+
   return (
     <div className="space-y-6">
-      {/* Progress Stepper */}
-      <Card className="card-uabc">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                    step.number <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+      {/* Avance del registro */}
+      <div className="card-uabc p-5">
+        <ol className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-2">
+          {steps.map((step, index) => {
+            const done = step.number < currentStep
+            const active = step.number === currentStep
+            return (
+              <li key={step.number} className="flex flex-1 items-start gap-3">
+                <span
+                  className={cn(
+                    "font-data flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                    active
+                      ? "border-transparent bg-primary text-primary-foreground"
+                      : done
+                        ? "border-[var(--state-approved-line)] bg-[var(--state-approved-bg)] text-[var(--state-approved)]"
+                        : "border-border bg-card text-muted-foreground",
+                  )}
+                  aria-current={active ? "step" : undefined}
                 >
-                  {step.number}
-                </div>
-                <div className="ml-3 hidden sm:block">
+                  {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step.number}
+                </span>
+                <div className="min-w-0">
                   <p
-                    className={`text-sm font-medium ${step.number <= currentStep ? "text-foreground" : "text-muted-foreground"}`}
+                    className={cn(
+                      "text-sm font-medium",
+                      active ? "text-ink" : done ? "text-foreground" : "text-muted-foreground",
+                    )}
                   >
                     {step.title}
                   </p>
                   <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
-                {index < steps.length - 1 && <div className="hidden sm:block w-16 h-px bg-border mx-4" />}
-              </div>
-            ))}
-          </div>
-          <Progress value={(currentStep / 3) * 100} className="mt-4" />
-        </CardHeader>
-      </Card>
+                {index < steps.length - 1 && (
+                  <span
+                    className="mt-4 hidden h-px flex-1 bg-border sm:block"
+                    aria-hidden="true"
+                  />
+                )}
+              </li>
+            )
+          })}
+        </ol>
+        <Progress value={(currentStep / steps.length) * 100} className="mt-5 h-1.5" />
+      </div>
 
-      {/* Step Content */}
-      <Card className="card-uabc">
-        <CardHeader>
-          <CardTitle>{steps[currentStep - 1].title}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Contenido del paso */}
+      <div className="card-uabc p-5 sm:p-6">
+        <h2 className="font-display text-lg font-semibold text-ink">
+          {steps[currentStep - 1].title}
+        </h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {steps[currentStep - 1].description}
+        </p>
+        <div className="mt-6">
           <Form {...form}>
             <form className="space-y-6">{renderStep()}</form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
+      {blockedReason && (
+        <p className="rounded-md border border-[var(--state-pending-line)] bg-[var(--state-pending-bg)] px-3 py-2 text-sm text-[var(--state-pending)]">
+          {blockedReason}
+        </p>
+      )}
+
+      {/* Navegación */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={handleExit}>
-            <X className="h-4 w-4 mr-2" />
+            <X className="mr-2 h-4 w-4" aria-hidden="true" />
             Salir
           </Button>
-          <Button type="button" variant="outline" onClick={handlePrevious} disabled={currentStep === 1}>
-            <ChevronLeft className="h-4 w-4 mr-2" />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             Anterior
           </Button>
         </div>
 
         <div className="flex gap-2">
-          {currentStep === 3 && (
-            <Button type="button" variant="outline" onClick={() => handleSubmit(true)} disabled={isSubmitting}>
-              Guardar
-            </Button>
-          )}
-
-          {currentStep < 3 ? (
-            <Button 
-              type="button" 
-              onClick={handleNext} 
+          {currentStep < steps.length ? (
+            <Button
+              type="button"
+              onClick={handleNext}
               className="btn-primary"
-              disabled={currentStep === 1 && (
-                form.watch('hasCost') ||
-                !form.watch('isAuthorized') ||
-                (() => {
-                  const sd = form.watch('startDate')
-                  if (!sd) return true
-                  const start = new Date(sd)
-                  const now = new Date()
-                  const diffMs = start.getTime() - now.getTime()
-                  return diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
-                })()
-              )}
+              disabled={Boolean(blockedReason)}
             >
               Siguiente
-              <ChevronRight className="h-4 w-4 ml-2" />
+              <ChevronRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
           ) : (
-            <Button type="button" onClick={() => handleSubmit(false)} disabled={isSubmitting} className="btn-primary">
-              {isSubmitting ? "Enviando..." : "Enviar a revisión"}
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="btn-primary"
+            >
+              {isSubmitting ? "Enviando…" : "Enviar a revisión"}
             </Button>
           )}
         </div>

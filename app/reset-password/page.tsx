@@ -48,7 +48,7 @@ function ResetPasswordForm() {
       <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4">
-          <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+          <Logo className="justify-center" tone="onLight" />
           <div>
             <CardTitle className="text-2xl font-bold text-foreground-strong">
               Restablecer Contraseña
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
         <div className="flex-1 flex items-center justify-center p-4">
           <Card className="w-full max-w-md card-uabc shadow-2xl border-0 backdrop-blur-sm bg-white/95">
             <CardHeader className="text-center space-y-4">
-              <Logo className="justify-center" textColor="text-primary" dotColor="text-muted-foreground" />
+              <Logo className="justify-center" tone="onLight" />
               <div>
                 <CardTitle className="text-2xl font-bold text-foreground-strong">
                   Cargando...

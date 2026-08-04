@@ -1,21 +1,37 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ProtectedRoute } from "@/components/layout/protected-route"
-import { Navbar } from "@/components/layout/navbar"
+import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { EventTimeline } from "@/components/events/event-timeline"
-import { Calendar, MapPin, Users, FileText, Download, Award, Edit, ArrowLeft, ExternalLink, Building, FileSpreadsheet } from "lucide-react"
+import { EventNextSteps } from "@/components/workflow/event-next-steps"
+import { ProcessRail } from "@/components/workflow/process-guide"
+import {
+  ArrowLeft,
+  Building2,
+  ExternalLink,
+  FileSpreadsheet,
+  Pencil,
+  Printer,
+  Upload,
+} from "lucide-react"
 import { getEventById } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
+import {
+  EVIDENCE_ACTION_LABEL,
+  WORKFLOW_LINKS,
+  evidenceDeadline,
+  formatDateTime,
+  formatLongDate,
+  nextStepFor,
+} from "@/lib/workflow"
+import { semesterOf } from "@/lib/semester"
+import { COORDINATION_EMAIL } from "@/components/layout/header"
 import type { Event } from "@/lib/types"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
 
 export default function EventDetailPage() {
   const params = useParams()
@@ -25,373 +41,383 @@ export default function EventDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
     const loadEvent = async () => {
       try {
         setIsLoading(true)
         const eventId = params.id as string
-        
-        // Check authentication first
+
         const user = await getAuthUser()
         if (!user) {
           router.push("/login")
           return
         }
 
-        // Load event from database
-        const foundEvent = await getEventById(eventId)
+        const found = await getEventById(eventId)
+        if (!mounted) return
 
-        if (foundEvent) {
-          // Check if user owns this event (for security)
-          if (foundEvent.userId !== user.id && user.role !== 'admin') {
-            toast({
-              title: "Acceso denegado",
-              description: "No tienes permisos para ver este evento",
-              variant: "destructive",
-            })
-            router.push("/dashboard")
-            return
-          }
-          
-          setEvent(foundEvent)
-        } else {
+        if (!found) {
           toast({
-            title: "Evento no encontrado",
-            description: "El evento que buscas no existe",
+            title: "Ese evento no existe",
+            description: "Es posible que se haya eliminado o que el enlace esté mal.",
             variant: "destructive",
           })
           router.push("/dashboard")
+          return
         }
-      } catch (error) {
-        console.error('Load event error:', error)
+
+        if (found.userId !== user.id && user.role !== "admin") {
+          toast({
+            title: "No puedes ver este evento",
+            description: "Sólo la persona que lo registró y la coordinación tienen acceso.",
+            variant: "destructive",
+          })
+          router.push("/dashboard")
+          return
+        }
+
+        setEvent(found)
+      } catch (err) {
+        console.error("Load event error:", err)
+        if (!mounted) return
         toast({
-          title: "Error",
-          description: "No se pudo cargar el evento",
+          title: "No se pudo cargar el evento",
+          description: "Revisa tu conexión y vuelve a intentarlo.",
           variant: "destructive",
         })
         router.push("/dashboard")
       } finally {
-        setIsLoading(false)
+        if (mounted) setIsLoading(false)
       }
     }
 
     loadEvent()
+    return () => {
+      mounted = false
+    }
   }, [params.id, router, toast])
 
-
+  const next = useMemo(() => (event ? nextStepFor(event) : null), [event])
+  const deadline = useMemo(() => (event ? evidenceDeadline(event) : null), [event])
 
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex flex-col">
-          <Header />
-          <Navbar />
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-muted rounded w-1/3"></div>
-              <div className="h-64 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
+        <AppShell width="wide">
+          <div className="animate-pulse space-y-6">
+            <div className="h-9 w-1/3 rounded bg-muted" />
+            <div className="h-24 rounded bg-muted" />
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="h-72 rounded bg-muted lg:col-span-2" />
+              <div className="h-72 rounded bg-muted" />
             </div>
-          </main>
-        </div>
+          </div>
+        </AppShell>
       </ProtectedRoute>
     )
   }
 
-  if (!event) {
-    return null
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat("es-MX", {
-      timeZone: "America/Tijuana",
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(dateString))
-  }
+  if (!event) return null
 
   const canEdit = event.status === "rechazado"
+  const semester = semesterOf(event.startDate)
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" onClick={() => router.push("/dashboard")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+      <AppShell width="wide">
+        {/* Encabezado de la versión impresa. */}
+        <div className="print-only mb-6 border-b border-black/20 pb-3">
+          <p className="text-[9pt] uppercase tracking-widest">
+            UABC · Facultad de Medicina y Psicología
+          </p>
+          <p className="text-[11pt] font-semibold">
+            Extensión de la cultura y divulgación de la ciencia
+          </p>
+          <p className="text-[9pt]">Registro de evento · {COORDINATION_EMAIL}</p>
+        </div>
+
+        <Button asChild variant="ghost" size="sm" className="no-print -ml-2 mb-4">
+          <Link href="/dashboard">
+            <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Mis eventos
+          </Link>
+        </Button>
+
+        <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <StatusBadge status={event.status} />
+              {semester && (
+                <span className="font-data rounded-md border border-border bg-surface-2/70 px-2 py-0.5 text-[0.6875rem] text-muted-foreground">
+                  Ciclo {semester}
+                </span>
+              )}
+            </div>
+            <h1 className="font-display text-2xl font-semibold text-balance text-ink sm:text-3xl">
+              {event.name}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Responsable: {event.responsible || "No especificado"}
+            </p>
+          </div>
+
+          <div className="no-print flex shrink-0 flex-wrap gap-2">
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" aria-hidden="true" />
+              Imprimir
             </Button>
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground-strong">{event.name}</h1>
-                  <p className="text-muted-foreground mt-1">Responsable: {event.responsible}</p>
+            {canEdit && (
+              <Button asChild className="btn-primary">
+                <Link href={`/events/${event.id}/edit`}>
+                  <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Editar evento
+                </Link>
+              </Button>
+            )}
+          </div>
+        </header>
+
+        {next && <EventNextSteps event={event} step={next} className="mb-6" />}
+
+        <ProcessRail activePhaseId={next?.phaseId} className="no-print mb-6" />
+
+        <div className="print-flow grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <section className="card-uabc p-5">
+              <h2 className="font-display text-base font-semibold text-ink">Datos del evento</h2>
+              <dl className="mt-3">
+                <Field label="Inicio">
+                  <span className="font-data text-xs">{formatDateTime(event.startDate)}</span>
+                </Field>
+                <Field label="Fin">
+                  <span className="font-data text-xs">{formatDateTime(event.endDate)}</span>
+                </Field>
+                <Field label="Modalidad">{event.modality}</Field>
+                <Field label="Sede">
+                  {event.venue || "No aplica para eventos en línea"}
+                </Field>
+                <Field label="Programa">{event.program}</Field>
+                <Field label="Tipo">{event.type}</Field>
+                <Field label="Clasificación">
+                  {event.classification === "Otro" && event.classificationOther
+                    ? `Otro — ${event.classificationOther}`
+                    : event.classification}
+                </Field>
+                <Field label="Códigos 8 = 1">
+                  <span className="font-data text-xs">{event.codigosRequeridos}</span>
+                </Field>
+                <Field label="Costo">
+                  {event.hasCost
+                    ? event.costDetails || "Con costo — contactar a educación continua"
+                    : "Sin costo"}
+                </Field>
+                {(event.modality === "En línea" || event.modality === "Mixta") &&
+                  event.onlineInfo && (
+                    <Field label="Acceso en línea">
+                      <span className="whitespace-pre-wrap">{event.onlineInfo}</span>
+                    </Field>
+                  )}
+              </dl>
+            </section>
+
+            {/* Texto largo: aquí es donde la descripción necesitaba aire. */}
+            <LongText
+              title="Descripción del evento"
+              body={event.programDetails}
+              empty="No se capturó la descripción del evento."
+            />
+
+            <LongText
+              title="Semblanza curricular de ponentes"
+              body={event.speakerCvs}
+              empty="No se capturó la semblanza de los ponentes."
+            />
+
+            <LongText
+              title="Organizadores"
+              caption="Nombres tal como aparecerán en las constancias."
+              body={event.organizers}
+              empty="No se capturaron organizadores."
+            />
+
+            {event.observations && (
+              <LongText title="Observaciones" body={event.observations} empty="" />
+            )}
+
+            {event.status === "rechazado" && event.rejectionReason && (
+              <section className="rounded-lg border border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] p-5">
+                <h2 className="font-display text-base font-semibold text-[var(--state-rejected)]">
+                  Motivo del rechazo
+                </h2>
+                <p className="mt-2 whitespace-pre-wrap text-[0.9375rem] leading-7 text-pretty text-foreground">
+                  {event.rejectionReason}
+                </p>
+              </section>
+            )}
+
+            {event.adminComments && (
+              <section className="rounded-lg border border-[var(--state-info-line)] bg-[var(--state-info-bg)] p-5">
+                <h2 className="font-display text-base font-semibold text-[var(--state-info)]">
+                  Comentarios de la coordinación
+                </h2>
+                <p className="mt-2 whitespace-pre-wrap text-[0.9375rem] leading-7 text-pretty text-foreground">
+                  {event.adminComments}
+                </p>
+              </section>
+            )}
+          </div>
+
+          <aside className="space-y-6">
+            {event.status === "aprobado" && (
+              <section className="card-uabc no-print p-5">
+                <h2 className="font-display text-base font-semibold text-ink">Trámites</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Formularios institucionales. Se abren en una pestaña nueva.
+                </p>
+                <div className="mt-4 space-y-2">
+                  <LinkButton
+                    href={WORKFLOW_LINKS.reservarEspacio}
+                    icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
+                    label="Reservar espacio"
+                  />
+                  <LinkButton
+                    href={WORKFLOW_LINKS.plantillaDifusion}
+                    icon={<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />}
+                    label="Plantilla de difusión"
+                  />
+                  <LinkButton
+                    href={WORKFLOW_LINKS.registroAsistencia}
+                    icon={<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />}
+                    label="Registro de asistencia"
+                  />
+                  <LinkButton
+                    href={WORKFLOW_LINKS.evidencias}
+                    icon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                    label={EVIDENCE_ACTION_LABEL}
+                    primary
+                  />
                 </div>
-                <StatusBadge status={event.status} />
-              </div>
-            </div>
-          </div>
+                {deadline && (
+                  <p className="font-data mt-3 text-xs text-muted-foreground">
+                    Evidencias hasta el {formatLongDate(deadline)}
+                  </p>
+                )}
+              </section>
+            )}
 
-          {/* Timeline */}
-          <EventTimeline event={event} className="mb-8" />
+            <section className="card-uabc p-5">
+              <h2 className="font-display text-base font-semibold text-ink">Contacto</h2>
+              <dl className="mt-3">
+                <Field label="Correo" compact>
+                  <span className="font-data text-xs break-all">{event.email || "—"}</span>
+                </Field>
+                <Field label="Teléfono" compact>
+                  <span className="font-data text-xs">{event.phone || "—"}</span>
+                </Field>
+              </dl>
+            </section>
 
-          {/* Event Details */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Information */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Información del Evento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Fecha de inicio</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(event.startDate)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Fecha de fin</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(event.endDate)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Sede</p>
-                      <p className="text-sm text-muted-foreground">{event.venue}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant="outline">{event.program}</Badge>
-                    <Badge variant="outline">{event.type}</Badge>
-                    <Badge variant="outline">{event.classification}</Badge>
-                    <Badge variant="outline">{event.modality}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Contact Information */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Información de Contacto
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">{event.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Teléfono</p>
-                    <p className="text-sm text-muted-foreground">{event.phone}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Cost Information */}
-              {event.hasCost && (
-                <Card className="card-uabc">
-                  <CardHeader>
-                    <CardTitle>Información de Costo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{event.costDetails}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Online Information */}
-              {(event.modality === "En línea" || event.modality === "Mixta") && event.onlineInfo && (
-                <Card className="card-uabc">
-                  <CardHeader>
-                    <CardTitle>Información en Línea</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{event.onlineInfo}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Organizers */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle>Organizadores</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{event.organizers}</p>
-                </CardContent>
-              </Card>
-
-              {/* Observations */}
-              {event.observations && (
-                <Card className="card-uabc">
-                  <CardHeader>
-                    <CardTitle>Observaciones</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{event.observations}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Admin Comments */}
-              {event.adminComments && (
-                <Card className="card-uabc">
-                  <CardHeader>
-                    <CardTitle>Comentarios Administrativos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{event.adminComments}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Rejection Reason */}
-              {event.status === "rechazado" && event.rejectionReason && (
-                <Card className="card-uabc border-destructive">
-                  <CardHeader>
-                    <CardTitle className="text-destructive">Motivo de Rechazo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-destructive">{event.rejectionReason}</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Actions */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle>Acciones</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {canEdit && (
-                    <Button
-                      onClick={() => router.push(`/events/${event.id}/edit`)}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar evento
-                    </Button>
-                  )}
-
-
-                  {event.status === "aprobado" && (
-                    <>
-                      <Button 
-                        onClick={() => window.open('https://forms.gle/Dy5Kxns3DxijYzfh6', '_blank')}
-                        className="btn-primary w-full"
-                      >
-                        <Award className="h-4 w-4 mr-2" />
-                        Generar constancias (subir evidencias)
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </Button>
-                      <p className="text-[12px] text-muted-foreground -mt-2">Posterior al evento, tendrá hasta 3 semanas para subir las evidencias para solicitar constancias.</p>
-
-                      <Button 
-                        onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSfdntnwDSwszm_3MVBvkVjy831AAu1Ky0qkhjbpRI7MIqzpvg/viewform', '_blank')}
-                        variant="outline" 
-                        className="w-full"
-                      >
-                        <Building className="h-4 w-4 mr-2" />
-                        Espacios
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </Button>
-
-                      <Button 
-                        onClick={() => window.open('https://docs.google.com/presentation/d/1jOYJ2OPRA_KgVFCYFG4gb9DIryGcAMX-/edit?usp=sharing&ouid=100348146339426668698&rtpof=true&sd=true', '_blank')}
-                        variant="outline" 
-                        className="w-full"
-                      >
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Template
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </Button>
-                    </>
-                  )}
-
-
-                </CardContent>
-              </Card>
-
-              {/* Program Details */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Descripción del evento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="whitespace-pre-wrap text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                    {event.programDetails || "No se proporcionó descripción del evento"}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Speaker CVs */}
-              {event.speakerCvs && (
-                <Card className="card-uabc">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Semblanza curricular de ponentes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="whitespace-pre-wrap text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                      {event.speakerCvs}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Event Stats */}
-              <Card className="card-uabc">
-                <CardHeader>
-                  <CardTitle>Información del Estado</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium">Creado</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(event.createdAt).toLocaleDateString("es-MX")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Última actualización</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(event.updatedAt).toLocaleDateString("es-MX")}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
+            <section className="card-uabc p-5">
+              <h2 className="font-display text-base font-semibold text-ink">Registro</h2>
+              <dl className="mt-3">
+                <Field label="Creado" compact>
+                  <span className="font-data text-xs">
+                    {formatLongDate(new Date(event.createdAt))}
+                  </span>
+                </Field>
+                <Field label="Actualizado" compact>
+                  <span className="font-data text-xs">
+                    {formatLongDate(new Date(event.updatedAt))}
+                  </span>
+                </Field>
+                {semester && (
+                  <Field label="Ciclo escolar" compact>
+                    <span className="font-data text-xs">{semester}</span>
+                  </Field>
+                )}
+              </dl>
+            </section>
+          </aside>
+        </div>
+      </AppShell>
     </ProtectedRoute>
+  )
+}
+
+function Field({
+  label,
+  children,
+  compact = false,
+}: {
+  label: string
+  children: React.ReactNode
+  compact?: boolean
+}) {
+  return (
+    <div className="field-row">
+      <dt className={compact ? "shrink-0 text-sm font-medium text-muted-foreground sm:w-28" : "field-label"}>
+        {label}
+      </dt>
+      <dd className="field-value">{children}</dd>
+    </div>
+  )
+}
+
+/**
+ * Bloque de lectura para los campos largos. Medida de línea contenida y
+ * interlínea amplia: son párrafos, no etiquetas.
+ */
+function LongText({
+  title,
+  body,
+  empty,
+  caption,
+}: {
+  title: string
+  body?: string
+  empty: string
+  caption?: string
+}) {
+  const text = body?.trim()
+
+  return (
+    <section className="sheet-uabc p-5 sm:p-6">
+      <h2 className="font-display text-base font-semibold text-ink">{title}</h2>
+      {caption && <p className="mt-1 text-xs text-muted-foreground">{caption}</p>}
+      <div className="mt-3 max-w-[68ch]">
+        {text ? (
+          <p className="whitespace-pre-wrap text-[0.9375rem] leading-7 text-pretty text-foreground">
+            {text}
+          </p>
+        ) : (
+          <p className="text-sm italic text-muted-foreground">{empty}</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function LinkButton({
+  href,
+  label,
+  icon,
+  primary = false,
+}: {
+  href: string
+  label: string
+  icon: React.ReactNode
+  primary?: boolean
+}) {
+  return (
+    <Button
+      variant={primary ? "default" : "outline"}
+      className={`h-auto w-full justify-start whitespace-normal py-2 text-left ${primary ? "btn-primary" : ""}`}
+      onClick={() => window.open(href, "_blank", "noopener,noreferrer")}
+    >
+      <span className="mr-2 shrink-0">{icon}</span>
+      <span className="flex-1 text-sm">{label}</span>
+      <ExternalLink className="ml-2 h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
+    </Button>
   )
 }

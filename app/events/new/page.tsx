@@ -1,57 +1,47 @@
 "use client"
+
 import { useRouter } from "next/navigation"
 import { ProtectedRoute } from "@/components/layout/protected-route"
-import { Navbar } from "@/components/layout/navbar"
+import { AppShell } from "@/components/layout/app-shell"
+import { PageHeader } from "@/components/layout/page-header"
+import { Button } from "@/components/ui/button"
 import { EventWizard } from "@/components/events/event-wizard"
+import { ProcessGuideDialog } from "@/components/workflow/process-guide"
+import { HelpCircle } from "lucide-react"
 import { createEvent, submitEventForReview } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { CreateEventData } from "@/lib/types"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
 
 export default function NewEventPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleCreateEvent = async (data: CreateEventData, isDraft = false) => {
+  const handleCreateEvent = async (data: CreateEventData) => {
     try {
-      // Get current authenticated user
       const user = await getAuthUser()
       if (!user) {
         router.push("/login")
         return
       }
 
-      // Populate responsible and email from auth user
-      const eventData = {
-        ...data,
-        responsible: user.name,
-        email: user.email
-      }
-
-      // Create event in database
-      const newEvent = await createEvent(eventData, user.id)
-
-      // If not a draft, submit for review
-      let finalEvent = newEvent
-      if (!isDraft) {
-        finalEvent = await submitEventForReview(newEvent.id)
-      }
+      const newEvent = await createEvent(
+        { ...data, responsible: user.name, email: user.email },
+        user.id,
+      )
+      const submitted = await submitEventForReview(newEvent.id)
 
       toast({
-        title: isDraft ? "Borrador guardado" : "Evento enviado a revisión",
-        description: isDraft
-          ? "Tu evento se ha guardado"
-          : "Tu evento ha sido enviado para revisión administrativa",
+        title: "Evento enviado a revisión",
+        description: "La coordinación responderá por correo en 3 a 5 días hábiles.",
       })
 
-      router.push(`/events/${finalEvent.id}`)
+      router.push(`/events/${submitted.id}`)
     } catch (error) {
-      console.error('Create event error:', error)
+      console.error("Create event error:", error)
       toast({
-        title: "Error",
-        description: "No se pudo crear el evento. Inténtalo de nuevo.",
+        title: "No se pudo registrar el evento",
+        description: "Revisa los datos y vuelve a intentarlo.",
         variant: "destructive",
       })
     }
@@ -59,19 +49,26 @@ export default function NewEventPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <Navbar />
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground-strong">Crear Evento</h1>
-            <p className="text-muted-foreground mt-1">Completa la información para registrar tu evento</p>
-          </div>
+      <AppShell width="narrow">
+        <PageHeader
+          eyebrow="Etapa 02 de la ruta del evento"
+          title="Registrar evento"
+          description="Captura la actividad para enviarla a revisión. Necesitas la autorización previa de dirección o subdirección y al menos tres semanas de anticipación."
+          actions={
+            <ProcessGuideDialog
+              activePhaseId="registro"
+              trigger={
+                <Button variant="outline">
+                  <HelpCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Guía del proceso
+                </Button>
+              }
+            />
+          }
+        />
 
-          <EventWizard onSubmit={handleCreateEvent} />
-        </main>
-        <Footer />
-      </div>
+        <EventWizard onSubmit={handleCreateEvent} />
+      </AppShell>
     </ProtectedRoute>
   )
 }
