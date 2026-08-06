@@ -1,5 +1,10 @@
 import { supabase } from "./supabase"
 import { dbRowToEvent } from "./event-mapper"
+import {
+  sendAdminCodesNotification,
+  sendEventApprovedNotification,
+  sendEventRejectedNotification,
+} from "./email"
 import type { Event } from "./types"
 
 /**
@@ -68,12 +73,39 @@ export async function getAllEvents(
   }
 }
 
-/** Resolves a review as approved, with an optional note for the organizer. */
+/**
+ * Resolves a review as approved, with an optional note for the organizer.
+ * Notifies the organizer and the codes team by email (the helpers never
+ * throw, so a mail failure can't undo the approval).
+ */
 export async function approveEvent(eventId: string, comments?: string): Promise<Event> {
-  return resolveReview(eventId, {
+  const event = await resolveReview(eventId, {
     status: "aprobado",
     admin_comments: comments?.trim() || null,
   })
+
+  await sendEventApprovedNotification({
+    eventName: event.name,
+    userName: event.responsible || "Usuario",
+    userEmail: event.email || "",
+    eventId: event.id,
+  })
+  await sendAdminCodesNotification({
+    eventName: event.name,
+    eventId: event.id,
+    codigosRequeridos: event.codigosRequeridos,
+    startDate: event.startDate,
+    endDate: event.endDate,
+    venue: event.venue,
+    type: event.type,
+    classification: event.classification,
+    classificationOther: event.classificationOther,
+    programDetails: event.programDetails,
+    userName: event.responsible || "Usuario",
+    userEmail: event.email || "",
+  })
+
+  return event
 }
 
 /** Resolves a review as rejected; `reason` tells the organizer what to fix. */
@@ -82,11 +114,22 @@ export async function rejectEvent(
   reason: string,
   comments?: string,
 ): Promise<Event> {
-  return resolveReview(eventId, {
+  const event = await resolveReview(eventId, {
     status: "rechazado",
     rejection_reason: reason.trim(),
     admin_comments: comments?.trim() || null,
   })
+
+  await sendEventRejectedNotification({
+    eventName: event.name,
+    userName: event.responsible || "Usuario",
+    userEmail: event.email || "",
+    eventId: event.id,
+    rejectionReason: reason.trim(),
+    adminComments: comments?.trim(),
+  })
+
+  return event
 }
 
 async function resolveReview(

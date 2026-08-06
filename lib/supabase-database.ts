@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 import { createEventDataToDbRow, dbRowToEvent } from "./event-mapper"
+import { sendNewEventNotification } from "./email"
 import type { CreateEventData, Event } from "./types"
 
 /**
@@ -18,7 +19,17 @@ export async function createEvent(eventData: CreateEventData, userId: string): P
     .single()
 
   if (error) throw error
-  return dbRowToEvent(data)
+  const event = dbRowToEvent(data)
+
+  // Aviso a la coordinación; nunca bloquea el registro (el helper no lanza).
+  await sendNewEventNotification({
+    eventName: event.name,
+    userName: event.responsible || "Usuario",
+    userEmail: event.email || "No disponible",
+    eventId: event.id,
+  })
+
+  return event
 }
 
 /** Events registered by the given user, newest first. */

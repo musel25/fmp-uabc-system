@@ -1,4 +1,15 @@
-// Email notification utilities
+/**
+ * Email notifications, sent through the /api/send-email route (Resend).
+ *
+ * Every sender catches its own failures and never throws: a mail problem must
+ * not undo an event registration or an admin resolution. Without a
+ * RESEND_API_KEY the route logs the message server-side and reports success.
+ *
+ * Who gets notified:
+ *  - new event registered  → coordination inbox (hardcoded below)
+ *  - event approved        → the organizer, plus the codes team
+ *  - event rejected        → the organizer, with the reason
+ */
 interface NewEventNotification {
   eventName: string
   userName: string
@@ -92,11 +103,9 @@ Sistema de Registro y Constancias - FMP UABC
       throw new Error(`Failed to send email: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`)
     }
 
-    console.log('Email notification sent successfully for event:', data.eventName)
   } catch (error) {
     // Log the error but don't throw it - we don't want email failures to break event creation
     console.error('Failed to send email notification:', error)
-    console.error('Event data:', data)
   }
 }
 
@@ -163,11 +172,9 @@ Sistema de Registro y Constancias - FMP UABC
       throw new Error(`Failed to send email: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`)
     }
 
-    console.log('Event approval notification sent successfully for event:', data.eventName)
   } catch (error) {
     // Log the error but don't throw it - we don't want email failures to break event approval
     console.error('Failed to send event approval notification:', error)
-    console.error('Event data:', data)
   }
 }
 
@@ -246,10 +253,8 @@ Sistema de Registro y Constancias - FMP UABC
       throw new Error(`Failed to send email: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`)
     }
 
-    console.log('Event rejection notification sent successfully for event:', data.eventName)
   } catch (error) {
     console.error('Failed to send event rejection notification:', error)
-    console.error('Event data:', data)
   }
 }
 
@@ -422,10 +427,8 @@ ID del evento: ${data.eventId}
       throw new Error(`Failed to send email: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`)
     }
 
-    console.log('Admin codes notification sent successfully for event:', data.eventName)
   } catch (error) {
     // Log the error but don't throw it - we don't want email failures to break event approval
     console.error('Failed to send admin codes notification:', error)
-    console.error('Event data:', data)
   }
 }
