@@ -110,9 +110,20 @@ export function AdminEventReviewDrawer({
               <span className="font-data text-xs">{event.codigosRequeridos}</span>
             </Field>
             <Field label="Costo">
-              {event.hasCost
-                ? event.costDetails || "Con costo — requiere educación continua"
-                : "Sin costo"}
+              {event.hasCost ? "Con costo — requiere educación continua" : "Sin costo"}
+            </Field>
+            <Field label="Autorización">
+              {event.isAuthorized === null
+                ? "Sin registrar"
+                : event.isAuthorized
+                  ? "Autorizado por dirección o subdirección"
+                  : "Aún sin autorización"}
+            </Field>
+            <Field label="Usuario UABC">
+              {event.userType === null ? "Sin registrar" : event.userType === "externo" ? "Externo" : "Interno"}
+            </Field>
+            <Field label="Categorías SEAES">
+              {event.seaesCategories.length > 0 ? event.seaesCategories.join("; ") : "—"}
             </Field>
           </Section>
 

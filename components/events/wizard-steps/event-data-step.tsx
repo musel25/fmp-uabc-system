@@ -16,7 +16,7 @@ import {
   EXTERNAL_USER_NOTE_STEPS,
   SEAES_CATEGORIES,
   type EventWizardValues,
-} from "@/lib/event-extras"
+} from "@/lib/event-form"
 
 interface EventDataStepProps {
   form: UseFormReturn<EventWizardValues>

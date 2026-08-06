@@ -1,6 +1,14 @@
 import { supabase } from './supabase'
 import type { User } from '@supabase/supabase-js'
 
+/**
+ * Authentication helpers on top of Supabase Auth.
+ *
+ * A `profiles` row is created automatically for every new account by the
+ * `on_auth_user_created` database trigger; the app never inserts or updates
+ * profiles (RLS forbids it — roles are managed from the Supabase dashboard).
+ */
+
 export interface Profile {
   id: string
   email: string
@@ -132,28 +140,6 @@ export async function isAdmin(): Promise<boolean> {
   } catch (error) {
     console.error('Is admin check error:', error)
     return false
-  }
-}
-
-// Update user profile
-export async function updateProfile(userId: string, updates: Partial<Profile>) {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return { profile: data, error: null }
-  } catch (error) {
-    console.error('Update profile error:', error)
-    return { profile: null, error }
   }
 }
 

@@ -3,7 +3,7 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
 import type { UseFormReturn } from "react-hook-form"
-import type { EventWizardValues } from "@/lib/event-extras"
+import type { EventWizardValues } from "@/lib/event-form"
 import { MAX_WORDS_LONG_FIELD } from "@/lib/workflow"
 import { cn } from "@/lib/utils"
 

@@ -208,10 +208,23 @@ export default function EventDetailPage() {
                   <span className="font-data text-xs">{event.codigosRequeridos}</span>
                 </Field>
                 <Field label="Costo">
-                  {event.hasCost
-                    ? event.costDetails || "Con costo — contactar a educación continua"
-                    : "Sin costo"}
+                  {event.hasCost ? "Con costo — contactar a educación continua" : "Sin costo"}
                 </Field>
+                {event.isAuthorized !== null && (
+                  <Field label="Autorización">
+                    {event.isAuthorized
+                      ? "Autorizado por dirección o subdirección"
+                      : "Aún sin autorización de dirección o subdirección"}
+                  </Field>
+                )}
+                {event.userType !== null && (
+                  <Field label="Usuario UABC">
+                    {event.userType === "externo" ? "Externo" : "Interno"}
+                  </Field>
+                )}
+                {event.seaesCategories.length > 0 && (
+                  <Field label="Categorías SEAES">{event.seaesCategories.join("; ")}</Field>
+                )}
                 {(event.modality === "En línea" || event.modality === "Mixta") &&
                   event.onlineInfo && (
                     <Field label="Acceso en línea">

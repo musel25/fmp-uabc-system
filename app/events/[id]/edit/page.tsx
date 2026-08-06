@@ -6,9 +6,10 @@ import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
 import { PageHeader } from "@/components/layout/page-header"
 import { EventWizard } from "@/components/events/event-wizard"
-import { getEventById, updateEvent, submitEventForReview } from "@/lib/supabase-database"
+import { getEventById, resubmitEvent } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
+import { eventToWizardValues } from "@/lib/event-form"
 import type { Event, CreateEventData } from "@/lib/types"
 
 export default function EditEventPage() {
@@ -86,33 +87,11 @@ export default function EditEventPage() {
     }
   }, [params.id, router, toast])
 
-  /** ISO (UTC) → 'YYYY-MM-DDTHH:mm' en zona America/Tijuana, para los inputs. */
-  const isoUTCToLocalTijuana = (iso?: string) => {
-    if (!iso) return ""
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return ""
-    const tz = "America/Tijuana"
-    const day = new Intl.DateTimeFormat("en-CA", {
-      timeZone: tz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(date)
-    const time = new Intl.DateTimeFormat("en-GB", {
-      timeZone: tz,
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date)
-    return `${day}T${time}`
-  }
-
   const handleUpdateEvent = async (data: CreateEventData) => {
     if (!event) return
 
     try {
-      await updateEvent(event.id, data)
-      await submitEventForReview(event.id)
+      await resubmitEvent(event.id, data)
 
       toast({
         title: "Evento enviado a revisión",
@@ -120,8 +99,7 @@ export default function EditEventPage() {
       })
 
       router.push(`/events/${event.id}`)
-    } catch (error) {
-      console.error("Update event error:", error)
+    } catch {
       toast({
         title: "No se pudieron guardar los cambios",
         description: "Revisa los datos y vuelve a intentarlo.",
@@ -159,35 +137,7 @@ export default function EditEventPage() {
           }
         />
 
-        <EventWizard
-          onSubmit={handleUpdateEvent}
-          initialData={{
-            name: event.name,
-            responsible: event.responsible,
-            email: event.email,
-            phone: event.phone,
-            program: event.program,
-            type: event.type,
-            classification: event.classification,
-            classificationOther: event.classificationOther,
-            modality: event.modality,
-            venue: event.venue,
-            startDate: isoUTCToLocalTijuana(event.startDate),
-            endDate: isoUTCToLocalTijuana(event.endDate),
-            hasCost: event.hasCost,
-            costDetails: event.costDetails,
-            onlineInfo: event.onlineInfo,
-            organizers: event.organizers,
-            observations: event.observations,
-            // Faltaban: sin estos, editar un evento borraba su descripción.
-            programDetails: event.programDetails,
-            speakerCvs: event.speakerCvs,
-            codigosRequeridos: event.codigosRequeridos,
-            // Ya tenía la autorización cuando se registró la primera vez.
-            // (Si las observaciones traen la respuesta guardada, esa gana.)
-            isAuthorized: "si",
-          }}
-        />
+        <EventWizard onSubmit={handleUpdateEvent} initialData={eventToWizardValues(event)} />
       </AppShell>
     </ProtectedRoute>
   )

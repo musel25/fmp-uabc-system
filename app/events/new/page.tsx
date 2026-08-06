@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { EventWizard } from "@/components/events/event-wizard"
 import { ProcessGuideDialog } from "@/components/workflow/process-guide"
 import { HelpCircle } from "lucide-react"
-import { createEvent, submitEventForReview } from "@/lib/supabase-database"
+import { createEvent } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import type { CreateEventData } from "@/lib/types"
@@ -25,20 +25,19 @@ export default function NewEventPage() {
         return
       }
 
+      // Los eventos nacen "en_revision": crear ya es enviar a revisión
       const newEvent = await createEvent(
         { ...data, responsible: user.name, email: user.email },
         user.id,
       )
-      const submitted = await submitEventForReview(newEvent.id)
 
       toast({
         title: "Evento enviado a revisión",
         description: "La coordinación responderá por correo en 3 a 5 días hábiles.",
       })
 
-      router.push(`/events/${submitted.id}`)
-    } catch (error) {
-      console.error("Create event error:", error)
+      router.push(`/events/${newEvent.id}`)
+    } catch {
       toast({
         title: "No se pudo registrar el evento",
         description: "Revisa los datos y vuelve a intentarlo.",
@@ -53,7 +52,7 @@ export default function NewEventPage() {
         <PageHeader
           eyebrow="Etapa 02 de la ruta del evento"
           title="Registrar evento"
-          description="Captura la actividad para enviarla a revisión. Necesitas la autorización previa de dirección o subdirección y al menos tres semanas de anticipación."
+          description="Captura la actividad para enviarla a revisión con al menos tres semanas de anticipación."
           actions={
             <ProcessGuideDialog
               activePhaseId="registro"

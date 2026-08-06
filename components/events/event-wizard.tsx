@@ -14,65 +14,69 @@ import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
 import { MIN_LEAD_DAYS } from "@/lib/workflow"
-import {
-  appendExtrasToObservations,
-  parseExtrasFromObservations,
-  type EventWizardValues,
-} from "@/lib/event-extras"
+import { wizardValuesToCreateData, type EventWizardValues } from "@/lib/event-form"
+import { tijuanaLocalToUTC } from "@/lib/timezone"
 import { cn } from "@/lib/utils"
 
-const eventSchema = z.object({
-  name: z.string().min(1, "El nombre del evento es requerido"),
-  responsible: z.string().optional(),
-  email: z.string().optional(),
-  phone: z.string().min(1, "El teléfono es requerido"),
-  program: z.enum(["Médico", "Psicología", "Nutrición", "Posgrado"]),
-  type: z.enum(["Académico", "Cultural", "Deportivo", "Salud"]),
-  classification: z.enum(["Conferencia", "Seminario", "Taller", "Otro"]),
-  classificationOther: z.string().optional(),
-  modality: z.enum(["Presencial", "En línea", "Mixta"]),
-  venue: z.string(),
-  startDate: z.string().min(1, "La fecha de inicio es requerida"),
-  endDate: z.string().min(1, "La fecha de fin es requerida"),
-  hasCost: z.boolean(),
-  costDetails: z.string().optional(),
-  onlineInfo: z.string().optional(),
-  organizers: z.string().min(1, "Los organizadores son requeridos"),
-  observations: z.string().optional(),
-  programDetails: z.string().min(1, "La descripción del evento es requerida"),
-  speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
-  codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
-  // Estas respuestas viajan dentro de `observations` (ver lib/event-extras.ts)
-  isAuthorized: z
-    .enum(["", "si", "no"])
-    .refine((v) => v !== "", "Indica si el evento ya fue autorizado"),
-  userType: z
-    .enum(["", "interno", "externo"])
-    .refine((v) => v !== "", "Indica si eres usuario interno o externo a UABC"),
-  seaesCategories: z.array(z.string()),
-}).refine((data) => {
-  // Venue is required only if modality is not "En línea"
-  if (data.modality !== "En línea" && (!data.venue || data.venue.trim() === "")) {
-    return false;
-  }
-  return true;
-}, {
-  message: "La sede es requerida para eventos presenciales y mixtos",
-  path: ["venue"]
-}).refine((data) => {
-  // Validar anticipación mínima de 21 días para la fecha de inicio
-  const start = new Date(data.startDate)
-  const now = new Date()
-  const diffMs = start.getTime() - now.getTime()
-  const minMs = MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
-  return diffMs >= minMs
-}, {
-  message: "Reagendar: no se cumple con el tiempo requerido (mínimo 21 días de anticipación)",
-  path: ["startDate"]
-})
+/**
+ * Three-step registration wizard: event data → long descriptions → review.
+ * Collects an `EventWizardValues`, converts it to `CreateEventData` on submit
+ * (dates normalized from Tijuana wall time to UTC) and hands it to `onSubmit`,
+ * which decides whether that means creating or resubmitting.
+ */
+
+const eventSchema = z
+  .object({
+    name: z.string().min(1, "El nombre del evento es requerido"),
+    responsible: z.string().optional(),
+    email: z.string().optional(),
+    phone: z.string().min(1, "El teléfono es requerido"),
+    program: z.enum(["Médico", "Psicología", "Nutrición", "Posgrado"]),
+    type: z.enum(["Académico", "Cultural", "Deportivo", "Salud"]),
+    classification: z.enum(["Conferencia", "Seminario", "Taller", "Otro"]),
+    classificationOther: z.string().optional(),
+    modality: z.enum(["Presencial", "En línea", "Mixta"]),
+    venue: z.string(),
+    startDate: z.string().min(1, "La fecha de inicio es requerida"),
+    endDate: z.string().min(1, "La fecha de fin es requerida"),
+    hasCost: z.boolean(),
+    onlineInfo: z.string().optional(),
+    organizers: z.string().min(1, "Los organizadores son requeridos"),
+    observations: z.string().optional(),
+    programDetails: z.string().min(1, "La descripción del evento es requerida"),
+    speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
+    codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
+    // Preguntas de opción: "" significa "sin contestar" y no pasa la validación
+    isAuthorized: z
+      .enum(["", "si", "no"])
+      .refine((v) => v !== "", "Indica si el evento ya fue autorizado"),
+    userType: z
+      .enum(["", "interno", "externo"])
+      .refine((v) => v !== "", "Indica si eres usuario interno o externo a UABC"),
+    seaesCategories: z.array(z.string()),
+  })
+  .refine(
+    // La sede sólo se omite en eventos totalmente en línea
+    (data) => data.modality === "En línea" || data.venue.trim() !== "",
+    {
+      message: "La sede es requerida para eventos presenciales y mixtos",
+      path: ["venue"],
+    },
+  )
+  .refine(
+    (data) => {
+      const diffMs = new Date(data.startDate).getTime() - Date.now()
+      return diffMs >= MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+    },
+    {
+      message: `Reagendar: no se cumple con el tiempo requerido (mínimo ${MIN_LEAD_DAYS} días de anticipación)`,
+      path: ["startDate"],
+    },
+  )
 
 interface EventWizardProps {
   onSubmit: (data: CreateEventData) => void
+  /** Prefill for the edit/resubmit flow (see eventToWizardValues). */
   initialData?: Partial<EventWizardValues>
 }
 
@@ -81,10 +85,6 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
-  // Al editar, las respuestas guardadas en observaciones regresan a sus campos
-  const parsedInitial = parseExtrasFromObservations(initialData?.observations)
-
-  // Ampliamos el tipo del formulario con las respuestas de control
   const form = useForm<EventWizardValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -108,37 +108,8 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       userType: "",
       seaesCategories: [],
       ...initialData,
-      ...(initialData ? { observations: parsedInitial.observations, ...parsedInitial.extras } : {}),
-    } as EventWizardValues,
+    },
   })
-
-  // Convierte una cadena 'YYYY-MM-DDTHH:mm' asumida en zona 'America/Tijuana' a ISO UTC
-  const localTijuanaToUTC = (local: string) => {
-    if (!local) return local
-    // Parse components
-    const [datePart, timePart] = local.split('T')
-    if (!datePart || !timePart) return local
-    const [y, m, d] = datePart.split('-').map(Number)
-    const [hh, mm] = timePart.split(':').map(Number)
-    // Create a date representing that wall time in UTC first
-    const utcGuess = new Date(Date.UTC(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0))
-    // Compute TZ offset for America/Tijuana at that instant
-    const tz = 'America/Tijuana'
-    const dtf = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour12: false,
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    })
-    const parts = dtf.formatToParts(utcGuess)
-    const map: any = {}
-    for (const p of parts) map[p.type] = p.value
-    const asUTC = Date.UTC(+map.year, +map.month - 1, +map.day, +map.hour, +map.minute, +map.second)
-    // Offset in minutes between formatted TZ time and the UTC guess
-    const offsetMinutes = (asUTC - utcGuess.getTime()) / 60000
-    const utcMillis = Date.UTC(y, (m || 1) - 1, d || 1, hh || 0, mm || 0) - offsetMinutes * 60000
-    return new Date(utcMillis).toISOString()
-  }
 
   const steps = [
     { number: 1, title: "Datos del evento", description: "Fechas, sede y clasificación" },
@@ -146,60 +117,59 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     { number: 3, title: "Revisión", description: "Confirmar y enviar" },
   ]
 
+  /* Por qué no se puede avanzar todavía. Antes el botón sólo se apagaba. */
+  const blockedReason = (() => {
+    if (currentStep !== 1) return null
+    if (!form.watch("isAuthorized"))
+      return "Indica si dirección o subdirección ya autorizó este evento."
+    if (!form.watch("userType")) return "Indica si eres usuario interno o externo a UABC."
+    if (form.watch("hasCost"))
+      return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
+    const startDate = form.watch("startDate")
+    if (!startDate) return "Indica la fecha y hora de inicio."
+    const diffMs = new Date(startDate).getTime() - Date.now()
+    if (diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000)
+      return `La fecha de inicio debe estar al menos ${MIN_LEAD_DAYS} días después de hoy.`
+    return null
+  })()
+
   const handleNext = async () => {
-    // For step 1, validate basic event fields
     if (currentStep === 1) {
-      const fieldsToValidate: (keyof EventWizardValues)[] = [
-        'name', 'phone', 'program',
-        'type', 'classification', 'modality', 'venue',
-        'startDate', 'endDate', 'organizers', 'codigosRequeridos',
-        'isAuthorized', 'userType'
-      ]
-
-      const isValid = await form.trigger(fieldsToValidate)
-
-      // Check if event has cost and prevent navigation
-      const hasCost = form.watch('hasCost')
-      if (hasCost) {
-        return // Don't proceed to next step if event has cost
-      }
-      
-      if (isValid) {
-        setCurrentStep(2)
-      }
-    }
-    // For step 2, validate program details
-    else if (currentStep === 2) {
-      const isValid = await form.trigger(['programDetails', 'speakerCvs'])
-
-      if (isValid) {
-        setCurrentStep(3)
-      }
+      const isValid = await form.trigger([
+        "name",
+        "phone",
+        "program",
+        "type",
+        "classification",
+        "modality",
+        "venue",
+        "startDate",
+        "endDate",
+        "organizers",
+        "codigosRequeridos",
+        "isAuthorized",
+        "userType",
+      ])
+      if (isValid && !blockedReason) setCurrentStep(2)
+    } else if (currentStep === 2) {
+      const isValid = await form.trigger(["programDetails", "speakerCvs"])
+      if (isValid) setCurrentStep(3)
     }
   }
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      const { isAuthorized, userType, seaesCategories, ...raw } = form.getValues()
-      // Normalizar fechas a UTC asumiendo horario de Tijuana
-      const data: CreateEventData = {
-        ...raw,
-        startDate: localTijuanaToUTC(raw.startDate),
-        endDate: localTijuanaToUTC(raw.endDate),
-        // Las respuestas sin columna propia viajan dentro de observaciones
-        observations: appendExtrasToObservations(raw.observations, {
-          isAuthorized,
-          userType,
-          seaesCategories,
-        }),
-      }
+      const values = form.getValues()
+      const data = wizardValuesToCreateData({
+        ...values,
+        startDate: tijuanaLocalToUTC(values.startDate),
+        endDate: tijuanaLocalToUTC(values.endDate),
+      })
       await onSubmit(data)
     } finally {
       setIsSubmitting(false)
@@ -222,23 +192,6 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
         return null
     }
   }
-
-  /* Por qué no se puede avanzar todavía. Antes el botón sólo se apagaba. */
-  const blockedReason = (() => {
-    if (currentStep !== 1) return null
-    if (!form.watch("isAuthorized"))
-      return "Indica si dirección o subdirección ya autorizó este evento."
-    if (!form.watch("userType"))
-      return "Indica si eres usuario interno o externo a UABC."
-    if (form.watch("hasCost"))
-      return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
-    const startDate = form.watch("startDate")
-    if (!startDate) return "Indica la fecha y hora de inicio."
-    const diffMs = new Date(startDate).getTime() - Date.now()
-    if (diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000)
-      return `La fecha de inicio debe estar al menos ${MIN_LEAD_DAYS} días después de hoy.`
-    return null
-  })()
 
   return (
     <div className="space-y-6">
@@ -275,10 +228,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
                   <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
-                  <span
-                    className="mt-4 hidden h-px flex-1 bg-border sm:block"
-                    aria-hidden="true"
-                  />
+                  <span className="mt-4 hidden h-px flex-1 bg-border sm:block" aria-hidden="true" />
                 )}
               </li>
             )
