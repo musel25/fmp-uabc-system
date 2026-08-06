@@ -29,7 +29,7 @@ CREATE TABLE public.events (
   responsible text,
   email text,
   phone text NOT NULL,
-  program text NOT NULL CHECK (program IN ('Médico', 'Psicología', 'Nutrición', 'Posgrado')),
+  program text NOT NULL CHECK (program IN ('Médico', 'Psicología', 'Nutrición', 'Posgrado', 'Otro')),
   type text NOT NULL CHECK (type IN ('Académico', 'Cultural', 'Deportivo', 'Salud')),
   classification text NOT NULL CHECK (classification IN ('Conferencia', 'Seminario', 'Taller', 'Otro')),
   classification_other text,

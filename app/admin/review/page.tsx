@@ -340,6 +340,7 @@ export default function AdminReviewPage() {
                   <SelectItem value="Psicología">Psicología</SelectItem>
                   <SelectItem value="Nutrición">Nutrición</SelectItem>
                   <SelectItem value="Posgrado">Posgrado</SelectItem>
+                  <SelectItem value="Otro">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -35,7 +35,7 @@ import { getAllEvents } from "@/lib/supabase-admin"
 import { semesterLabel, semesterOf, semesterRange } from "@/lib/semester"
 import type { Event, EventModality, EventProgram, EventType } from "@/lib/types"
 
-const PROGRAMS: EventProgram[] = ["Médico", "Psicología", "Nutrición", "Posgrado"]
+const PROGRAMS: EventProgram[] = ["Médico", "Psicología", "Nutrición", "Posgrado", "Otro"]
 const TYPES: EventType[] = ["Académico", "Cultural", "Deportivo", "Salud"]
 const MODALITIES: EventModality[] = ["Presencial", "En línea", "Mixta"]
 const STATUS_KEYS = ["Aprobados", "En revisión", "Rechazados"] as const
@@ -363,7 +363,7 @@ export default function AdminAnalyticsPage() {
                 <div className="grid gap-6 xl:grid-cols-2">
                   <ChartFrame
                     title="Eventos por programa por ciclo"
-                    subtitle="Composición de cada ciclo entre los cuatro programas educativos."
+                    subtitle="Composición de cada ciclo por programa educativo."
                     icon={<Layers className="h-4 w-4 text-primary" aria-hidden="true" />}
                   >
                     <StackedSemesterBars

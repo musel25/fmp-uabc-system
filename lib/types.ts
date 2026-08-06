@@ -15,7 +15,7 @@
 export type EventStatus = "en_revision" | "aprobado" | "rechazado"
 
 /** Academic program the event belongs to. */
-export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado"
+export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado" | "Otro"
 
 /** General nature of the activity. */
 export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"

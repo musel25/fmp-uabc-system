@@ -31,7 +31,7 @@ const eventSchema = z
     responsible: z.string().optional(),
     email: z.string().optional(),
     phone: z.string().min(1, "El teléfono es requerido"),
-    program: z.enum(["Médico", "Psicología", "Nutrición", "Posgrado"]),
+    program: z.enum(["Médico", "Psicología", "Nutrición", "Posgrado", "Otro"]),
     type: z.enum(["Académico", "Cultural", "Deportivo", "Salud"]),
     classification: z.enum(["Conferencia", "Seminario", "Taller", "Otro"]),
     classificationOther: z.string().optional(),
