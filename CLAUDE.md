@@ -2,113 +2,62 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## What this system is
 
-This is a **Next.js 15 web application** for the Faculty of Medicine and Psychology (FMP) at UABC (Universidad Autónoma de Baja California). The system manages event registration and certificate requests with an admin review workflow.
+A **Next.js 15 web application** for the Faculty of Medicine and Psychology (FMP) at UABC (Universidad Autónoma de Baja California). Organizers register events through a wizard; the coordination reviews each request and approves or rejects it; email notifications keep both sides informed. Full product description: `docs/ARCHITECTURE.md`.
 
-**Key Technologies:**
-- Next.js 15 with App Router and React Server Components
-- TypeScript with strict mode
-- Tailwind CSS v4 with custom UABC branding
-- shadcn/ui components (New York style)
-- React Hook Form with Zod validation
-- Mock authentication using localStorage
+**Stack:** Next.js 15 (App Router, all interactive pages are client components) · TypeScript strict · Tailwind CSS v4 · shadcn/ui (New York) · React Hook Form + Zod · **Supabase** (auth + Postgres with RLS) · Resend for email · Vercel hosting.
 
-## Development Commands
+## Commands
 
 ```bash
-# Development server
-npm run dev
-
-# Production build
-npm run build
-
-# Start production server
-npm run start
-
-# Lint code
-npm run lint
+npm run dev      # development server
+npm run build    # production build — TypeScript and ESLint errors FAIL the build
+npm run lint     # ESLint (next/core-web-vitals)
+npx tsc --noEmit # typecheck only
 ```
 
-**Note:** TypeScript and ESLint errors are currently ignored during builds via `next.config.mjs`.
+## Architecture in one paragraph
 
-## Architecture & Patterns
+There is no meaningful server side: every page runs in the browser and talks to Supabase directly with the **anon key**, so **Row Level Security is the entire authorization model** (`schema.sql` documents it; `migrations/` holds incremental changes). The one API route, `app/api/send-email/route.ts`, sends mail through Resend. Auth is real Supabase auth (`lib/supabase-auth.ts`); a `profiles` row with a `role` of `user` or `admin` is created by a DB trigger at signup, and roles are changed only from the Supabase dashboard.
 
-### Authentication System
-- Mock authentication system using localStorage (`lib/auth.ts`)
-- Two user roles: `"user"` and `"admin"`
-- `ProtectedRoute` component wraps routes requiring authentication
-- Admin routes require `requireAdmin={true}` prop
+## The event lifecycle
 
-### Event Management Workflow
-The application manages a complete event lifecycle:
-
-1. **Event Creation**: Users create events with detailed information and file uploads
-2. **Admin Review**: Admins review, approve/reject events with comments
-3. **Certificate Requests**: Users can request certificates for approved events
-4. **Certificate Generation**: Admins manage certificate status and generation
-
-### Key Data Types
-
-**Event Status Flow:**
 ```
-"borrador" → "en_revision" → "aprobado" | "rechazado"
+create (wizard) ──► en_revision ──► aprobado
+                        ▲               └─ (final)
+                        └── rechazado ──► edit + resubmit
 ```
 
-**Certificate Status:**
-```
-"sin_solicitar" → "solicitadas" → "emitidas"
-```
+- Users can only create/update events with `status = 'en_revision'` — RLS forbids anything else, so admins are the only path to `aprobado`/`rechazado`.
+- Only `rechazado` events are editable (`app/events/[id]/edit`).
+- Approving/rejecting emails the organizer; approving also emails the codes team. See `lib/email.ts` for who gets notified — **do not remove the email system; it is in production use.**
 
-**Core Event Interface:** See `lib/types.ts` for complete `Event` and `CreateEventData` interfaces.
+## Key modules (read these before touching data flow)
 
-### Component Organization
+- `lib/types.ts` — the `Event` / `CreateEventData` domain types, documented field by field.
+- `lib/event-mapper.ts` — the **only** place snake_case rows convert to/from camelCase. Add new columns here.
+- `lib/supabase-database.ts` — user-side queries. `lib/supabase-admin.ts` — admin-side queries (embed `profiles` for the creator's name/email).
+- `lib/event-form.ts` — wizard form values (`""` = unanswered radio), catalog constants (SEAES categories, external-user costs), and converters between form values and `CreateEventData`.
+- `lib/timezone.ts` — all event datetimes are Tijuana wall time in the UI and UTC in the DB. Always use these helpers.
+- `lib/workflow.ts` — the six-phase process guide, deadlines (21-day lead, evidence window), and copy shown across the app.
 
-- `app/`: Next.js App Router pages and layouts
-- `components/ui/`: shadcn/ui primitives (auto-generated, don't edit manually)
-- `components/layout/`: Layout components (Navbar, ProtectedRoute)
-- `components/events/`: Event-specific components (wizards, dialogs, timeline)
-- `components/admin/`: Admin-specific components (review drawers)
+## Adding a field to events (the full chain)
 
-### Styling Conventions
+1. SQL migration in `migrations/` (apply via Supabase; keep `schema.sql` in sync).
+2. `lib/types.ts` (`Event` + `CreateEventData` if user-provided).
+3. `lib/event-mapper.ts` (both directions).
+4. Wizard: schema in `event-wizard.tsx`, UI in `wizard-steps/event-data-step.tsx`, summary in `wizard-steps/event-review-step.tsx`, prefill in `lib/event-form.ts#eventToWizardValues`.
+5. Display: `app/events/[id]/page.tsx` and `components/admin/admin-event-review-drawer.tsx`.
 
-- Uses Tailwind CSS v4 with CSS variables for theming
-- Custom UABC brand colors: `--color-primary: #006341` (green), `--color-secondary: #cc8a00` (ochre)
-- `cn()` utility function combines `clsx` and `tailwind-merge` for conditional classes
-- Custom utility classes in `app/globals.css` (`.btn-primary`, `.chip-*` status indicators)
-- Supports light/dark themes via `next-themes`
+## Conventions
 
-### Path Aliases
-Configure imports using `@/*` alias:
-```typescript
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { Event } from "@/lib/types"
-```
+- Spanish locale (`es-MX`) for every user-facing string; code and comments may be English or Spanish (match the file).
+- Path alias `@/*`. Kebab-case files, PascalCase components.
+- UABC brand: primary green `#006341`, secondary ochre `#cc8a00`; status colors via `--state-*` CSS variables in `app/globals.css`; `card-uabc`, `chip-*`, `eyebrow` utility classes.
+- `components/ui/` is shadcn-generated — extend via composition, don't hand-edit.
+- Forms: React Hook Form + Zod with Spanish messages; follow `components/events/wizard-steps/`.
 
-### Form Handling
-- Use React Hook Form with Zod schemas for validation
-- Follow existing form patterns in `components/events/wizard-steps/`
-- Spanish locale validation messages
+## Environment
 
-### Mock Data
-- Event data stored in `lib/mock-events.ts`
-- Authentication is simulated (any email/password combination works)
-- Admin users: emails containing "admin"
-
-## Development Notes
-
-- Application uses Spanish locale (`es-MX`) for dates and interface
-- Mock file uploads return placeholder data
-- Event program options: "Médico", "Psicología", "Nutrición", "Posgrado"
-- Event types: "Académico", "Cultural", "Deportivo", "Salud"
-- All forms and interfaces are in Spanish
-
-## File Structure Patterns
-
-When adding new features:
-- Place reusable components in appropriate `components/` subdirectories
-- Add new pages under `app/` following App Router conventions
-- Define types in `lib/types.ts`
-- Add utilities to `lib/utils.ts`
-- Follow existing naming conventions (kebab-case for files, PascalCase for components)
+`.env.local` needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `RESEND_API_KEY` is set in Vercel for production; without it the email route logs instead of sending. There is no service-role key anywhere in the app — never add one to client code.
