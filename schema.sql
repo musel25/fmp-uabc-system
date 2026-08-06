@@ -134,9 +134,12 @@ CREATE POLICY "Users can view their own events" ON public.events
 CREATE POLICY "Users can create events" ON public.events
   FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'en_revision');
 
+-- Owners can touch pending events (pre-review fixes) and rejected events
+-- (the resubmit flow); approved events are immutable for them, and every
+-- user-side write must leave the event "en_revision".
 CREATE POLICY "Users can update their own events" ON public.events
   FOR UPDATE
-  USING (auth.uid() = user_id)
+  USING (auth.uid() = user_id AND status IN ('en_revision', 'rechazado'))
   WITH CHECK (auth.uid() = user_id AND status = 'en_revision');
 
 CREATE POLICY "Admins can view all events" ON public.events
