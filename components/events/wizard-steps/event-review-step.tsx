@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Info } from "lucide-react"
 import { getAuthUser } from "@/lib/supabase-auth"
-import type { CreateEventData } from "@/lib/types"
+import type { EventWizardValues } from "@/lib/event-extras"
 import type { AuthUser } from "@/lib/supabase-auth"
 import { SUBMISSION_NOTES, formatDateTime } from "@/lib/workflow"
 import { semesterOf } from "@/lib/semester"
 
 interface EventReviewStepProps {
-  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
+  form: UseFormReturn<EventWizardValues>
 }
 
 export function EventReviewStep({ form }: EventReviewStepProps) {
@@ -63,6 +63,17 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
           </Field>
           <Field label="Códigos 8 = 1">
             <span className="font-data text-xs">{data.codigosRequeridos}</span>
+          </Field>
+          <Field label="Autorización">
+            {data.isAuthorized === "si"
+              ? "Autorizado por dirección o subdirección"
+              : "Aún sin autorización de dirección o subdirección"}
+          </Field>
+          <Field label="Usuario UABC">
+            {data.userType === "externo" ? "Externo" : "Interno"}
+          </Field>
+          <Field label="Categorías SEAES">
+            {data.seaesCategories?.length ? data.seaesCategories.join("; ") : "—"}
           </Field>
         </dl>
       </section>

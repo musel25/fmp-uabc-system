@@ -7,12 +7,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { TriangleAlert } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Info, TriangleAlert } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
 import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import {
+  EXTERNAL_USER_COSTS,
+  EXTERNAL_USER_NOTE_STEPS,
+  SEAES_CATEGORIES,
+  type EventWizardValues,
+} from "@/lib/event-extras"
 
 interface EventDataStepProps {
-  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
+  form: UseFormReturn<EventWizardValues>
 }
 
 export function EventDataStep({ form }: EventDataStepProps) {
@@ -20,6 +27,7 @@ export function EventDataStep({ form }: EventDataStepProps) {
     register,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = form
 
@@ -27,7 +35,17 @@ export function EventDataStep({ form }: EventDataStepProps) {
   const hasCost = watch("hasCost")
   const modality = watch("modality")
   const isAuthorized = watch("isAuthorized")
+  const userType = watch("userType")
+  const seaesCategories = watch("seaesCategories") ?? []
   const startDate = watch("startDate")
+
+  const toggleSeaesCategory = (category: string, checked: boolean) => {
+    const current = getValues("seaesCategories") ?? []
+    setValue(
+      "seaesCategories",
+      checked ? [...current, category] : current.filter((c) => c !== category),
+    )
+  }
 
   const pad = (n: number) => String(n).padStart(2, "0")
   const formatLocalForInput = (d: Date) =>
@@ -50,30 +68,33 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
   return (
     <div className="space-y-8">
-      {/* Requisito previo: sin autorización no arranca el trámite. */}
       <section className="rounded-lg border border-border bg-surface-2/50 p-4">
-        <div className="flex items-start gap-3">
-          <Checkbox
-            id="isAuthorized"
-            checked={!!isAuthorized}
-            onCheckedChange={(checked) => setValue("isAuthorized", !!checked)}
-            className="mt-0.5"
-          />
-          <div className="min-w-0">
-            <Label htmlFor="isAuthorized" className="text-sm font-medium">
-              Dirección o subdirección ya autorizó este evento
+        <p className="text-sm font-medium">
+          ¿Dirección o subdirección ya autorizó este evento?
+        </p>
+        <RadioGroup
+          value={isAuthorized || undefined}
+          onValueChange={(v) =>
+            setValue("isAuthorized", v as EventWizardValues["isAuthorized"], {
+              shouldValidate: true,
+            })
+          }
+          className="mt-3 flex flex-wrap gap-x-8 gap-y-2"
+        >
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="si" id="isAuthorized-si" />
+            <Label htmlFor="isAuthorized-si" className="font-normal">
+              Sí
             </Label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Es el primer paso del trámite. Sin esa autorización el registro no puede continuar.
-            </p>
           </div>
-        </div>
-
-        {!isAuthorized && (
-          <Notice tone="rejected" className="mt-3">
-            Envía tu propuesta a dirección o subdirección y regresa cuando tengas la autorización.
-          </Notice>
-        )}
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="no" id="isAuthorized-no" />
+            <Label htmlFor="isAuthorized-no" className="font-normal">
+              No
+            </Label>
+          </div>
+        </RadioGroup>
+        <FieldError message={errors.isAuthorized?.message} />
       </section>
 
       <Fieldset legend="Identificación">
@@ -86,6 +107,65 @@ export function EventDataStep({ form }: EventDataStepProps) {
             className="mt-1"
           />
           <FieldError message={errors.name?.message} />
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label>¿Es usuario interno o externo a UABC? *</Label>
+          <RadioGroup
+            value={userType || undefined}
+            onValueChange={(v) =>
+              setValue("userType", v as EventWizardValues["userType"], {
+                shouldValidate: true,
+              })
+            }
+            className="mt-2 flex flex-wrap gap-x-8 gap-y-2"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="interno" id="userType-interno" />
+              <Label htmlFor="userType-interno" className="font-normal">
+                Sí, soy usuario interno
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="externo" id="userType-externo" />
+              <Label htmlFor="userType-externo" className="font-normal">
+                No, soy usuario externo
+              </Label>
+            </div>
+          </RadioGroup>
+          <FieldError message={errors.userType?.message} />
+
+          {userType === "externo" && (
+            <div className="mt-3 rounded-lg border border-[var(--state-info-line)] bg-[var(--state-info-bg)] p-4">
+              <h4 className="flex items-center gap-2 font-display text-sm font-semibold text-[var(--state-info)]">
+                <Info className="h-4 w-4" aria-hidden="true" />
+                Costos para usuarios externos
+              </h4>
+              <ul className="mt-2.5 space-y-1.5">
+                {EXTERNAL_USER_COSTS.map(({ space, cost }) => (
+                  <li
+                    key={space}
+                    className="flex items-baseline justify-between gap-3 text-sm text-foreground/90"
+                  >
+                    <span>{space}</span>
+                    <span className="font-data text-xs font-semibold">{cost}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 border-t border-[var(--state-info-line)] pt-3 text-sm text-foreground/90">
+                <p className="font-medium">
+                  Nota: si su evento es autorizado (revisar SPAM):
+                </p>
+                <ol className="mt-1.5 list-decimal space-y-1 pl-5">
+                  {EXTERNAL_USER_NOTE_STEPS.map((step) => (
+                    <li key={step} className="text-pretty">
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -168,6 +248,31 @@ export function EventDataStep({ form }: EventDataStepProps) {
             />
           </div>
         )}
+
+        <div className="sm:col-span-2">
+          <Label>Categorías SEAES</Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Este evento se enmarca dentro de (puedes seleccionar más de una):
+          </p>
+          <div className="mt-2.5 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+            {SEAES_CATEGORIES.map((category) => {
+              const id = `seaes-${category.replace(/\s+/g, "-").toLowerCase()}`
+              return (
+                <div key={category} className="flex items-start gap-2">
+                  <Checkbox
+                    id={id}
+                    checked={seaesCategories.includes(category)}
+                    onCheckedChange={(checked) => toggleSeaesCategory(category, !!checked)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor={id} className="text-sm font-normal leading-5">
+                    {category}
+                  </Label>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </Fieldset>
 
       <Fieldset legend="Cuándo y dónde">

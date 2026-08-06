@@ -184,7 +184,8 @@ export default function EditEventPage() {
             speakerCvs: event.speakerCvs,
             codigosRequeridos: event.codigosRequeridos,
             // Ya tenía la autorización cuando se registró la primera vez.
-            isAuthorized: true,
+            // (Si las observaciones traen la respuesta guardada, esa gana.)
+            isAuthorized: "si",
           }}
         />
       </AppShell>

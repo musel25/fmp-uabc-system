@@ -14,6 +14,11 @@ import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
 import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import {
+  appendExtrasToObservations,
+  parseExtrasFromObservations,
+  type EventWizardValues,
+} from "@/lib/event-extras"
 import { cn } from "@/lib/utils"
 
 const eventSchema = z.object({
@@ -37,8 +42,14 @@ const eventSchema = z.object({
   programDetails: z.string().min(1, "La descripción del evento es requerida"),
   speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
   codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
-  // Campo de control solo para el flujo del formulario (no se guarda en DB)
-  isAuthorized: z.boolean(),
+  // Estas respuestas viajan dentro de `observations` (ver lib/event-extras.ts)
+  isAuthorized: z
+    .enum(["", "si", "no"])
+    .refine((v) => v !== "", "Indica si el evento ya fue autorizado"),
+  userType: z
+    .enum(["", "interno", "externo"])
+    .refine((v) => v !== "", "Indica si eres usuario interno o externo a UABC"),
+  seaesCategories: z.array(z.string()),
 }).refine((data) => {
   // Venue is required only if modality is not "En línea"
   if (data.modality !== "En línea" && (!data.venue || data.venue.trim() === "")) {
@@ -62,7 +73,7 @@ const eventSchema = z.object({
 
 interface EventWizardProps {
   onSubmit: (data: CreateEventData) => void
-  initialData?: Partial<CreateEventData & { isAuthorized: boolean }>
+  initialData?: Partial<EventWizardValues>
 }
 
 export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
@@ -70,8 +81,11 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
-  // Ampliamos el tipo del formulario para incluir el campo de autorización
-  const form = useForm<CreateEventData & { isAuthorized: boolean }>({
+  // Al editar, las respuestas guardadas en observaciones regresan a sus campos
+  const parsedInitial = parseExtrasFromObservations(initialData?.observations)
+
+  // Ampliamos el tipo del formulario con las respuestas de control
+  const form = useForm<EventWizardValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       name: "",
@@ -90,9 +104,12 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       programDetails: "",
       speakerCvs: "",
       codigosRequeridos: 0,
-      isAuthorized: false,
+      isAuthorized: "",
+      userType: "",
+      seaesCategories: [],
       ...initialData,
-    },
+      ...(initialData ? { observations: parsedInitial.observations, ...parsedInitial.extras } : {}),
+    } as EventWizardValues,
   })
 
   // Convierte una cadena 'YYYY-MM-DDTHH:mm' asumida en zona 'America/Tijuana' a ISO UTC
@@ -132,19 +149,14 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const handleNext = async () => {
     // For step 1, validate basic event fields
     if (currentStep === 1) {
-      const fieldsToValidate: (keyof CreateEventData)[] = [
-        'name', 'phone', 'program', 
-        'type', 'classification', 'modality', 'venue', 
-        'startDate', 'endDate', 'organizers', 'codigosRequeridos'
+      const fieldsToValidate: (keyof EventWizardValues)[] = [
+        'name', 'phone', 'program',
+        'type', 'classification', 'modality', 'venue',
+        'startDate', 'endDate', 'organizers', 'codigosRequeridos',
+        'isAuthorized', 'userType'
       ]
-      
-      const isValid = await form.trigger(fieldsToValidate)
 
-      // Verificar autorización y detener navegación si NO está autorizado
-      const isAuthorized = form.watch('isAuthorized')
-      if (!isAuthorized) {
-        return // No continuar si no está autorizado
-      }
+      const isValid = await form.trigger(fieldsToValidate)
 
       // Check if event has cost and prevent navigation
       const hasCost = form.watch('hasCost')
@@ -175,12 +187,18 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      const raw = form.getValues()
+      const { isAuthorized, userType, seaesCategories, ...raw } = form.getValues()
       // Normalizar fechas a UTC asumiendo horario de Tijuana
       const data: CreateEventData = {
         ...raw,
         startDate: localTijuanaToUTC(raw.startDate),
         endDate: localTijuanaToUTC(raw.endDate),
+        // Las respuestas sin columna propia viajan dentro de observaciones
+        observations: appendExtrasToObservations(raw.observations, {
+          isAuthorized,
+          userType,
+          seaesCategories,
+        }),
       }
       await onSubmit(data)
     } finally {
@@ -209,7 +227,9 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const blockedReason = (() => {
     if (currentStep !== 1) return null
     if (!form.watch("isAuthorized"))
-      return "Marca la casilla de autorización cuando dirección o subdirección haya aprobado la propuesta."
+      return "Indica si dirección o subdirección ya autorizó este evento."
+    if (!form.watch("userType"))
+      return "Indica si eres usuario interno o externo a UABC."
     if (form.watch("hasCost"))
       return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
     const startDate = form.watch("startDate")

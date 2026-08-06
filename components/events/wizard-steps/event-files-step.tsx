@@ -3,12 +3,12 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
 import type { UseFormReturn } from "react-hook-form"
-import type { CreateEventData } from "@/lib/types"
+import type { EventWizardValues } from "@/lib/event-extras"
 import { MAX_WORDS_LONG_FIELD } from "@/lib/workflow"
 import { cn } from "@/lib/utils"
 
 interface EventFilesStepProps {
-  form: UseFormReturn<CreateEventData & { isAuthorized: boolean }>
+  form: UseFormReturn<EventWizardValues>
 }
 
 function countWords(text?: string): number {

@@ -56,7 +56,7 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     title: "Autorización interna",
     when: "Antes de registrar",
     summary:
-      "Dirección o subdirección debe autorizar el evento antes de que puedas registrarlo aquí.",
+      "Dirección o subdirección autoriza el evento. En el registro indicarás si ya cuentas con esa autorización.",
     tasks: [
       { text: "Envía tu propuesta a dirección o subdirección y espera su autorización." },
       {
