@@ -328,7 +328,7 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
       },
       body: JSON.stringify({
         to: [
-          'serafin.idanya@uabc.edu.mx',
+          'actividades8-1.fmptij@uabc.edu.mx',
           'administracion.fmptij@uabc.edu.mx',
           'marisela.moreno@uabc.edu.mx'
         ],
