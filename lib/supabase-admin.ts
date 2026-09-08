@@ -93,7 +93,6 @@ export async function approveEvent(eventId: string, comments?: string): Promise<
   await sendAdminCodesNotification({
     eventName: event.name,
     eventId: event.id,
-    codigosRequeridos: event.codigosRequeridos,
     startDate: event.startDate,
     endDate: event.endDate,
     venue: event.venue,

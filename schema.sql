@@ -43,6 +43,9 @@ CREATE TABLE public.events (
   observations text,
   program_details text,
   speaker_cvs text,
+  -- Legado: el wizard ya no pregunta cuántos códigos requiere el evento;
+  -- los organizadores los solicitan a actividades8-1.fmptij@uabc.edu.mx.
+  -- La columna se conserva por los eventos históricos y su DEFAULT.
   codigos_requeridos integer NOT NULL DEFAULT 0,
   -- Space-rental questions (migration 001). NULL = row predates the questions.
   is_authorized boolean,

@@ -12,6 +12,7 @@ import { Info, TriangleAlert } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
 import { MIN_LEAD_DAYS } from "@/lib/workflow"
 import {
+  CODIGOS_EMAIL,
   EXTERNAL_USER_COSTS,
   EXTERNAL_USER_NOTE_STEPS,
   SEAES_CATEGORIES,
@@ -174,17 +175,20 @@ export function EventDataStep({ form }: EventDataStepProps) {
           <FieldError message={errors.phone?.message} />
         </div>
 
-        <div>
-          <Label htmlFor="codigosRequeridos">Códigos 8 = 1 requeridos *</Label>
-          <Input
-            id="codigosRequeridos"
-            type="number"
-            min="0"
-            {...register("codigosRequeridos", { valueAsNumber: true })}
-            placeholder="0"
-            className="mt-1"
-          />
-          <FieldError message={errors.codigosRequeridos?.message} />
+        <div className="sm:col-span-2 rounded-lg border border-[var(--state-info-line)] bg-[var(--state-info-bg)] p-4">
+          <h4 className="flex items-center gap-2 font-display text-sm font-semibold text-[var(--state-info)]">
+            <Info className="h-4 w-4" aria-hidden="true" />
+            Códigos 8 = 1
+          </h4>
+          <p className="mt-2 text-sm text-foreground/90">
+            Si requiere códigos, solicítelos en el siguiente correo:{" "}
+            <a
+              href={`mailto:${CODIGOS_EMAIL}`}
+              className="font-medium text-[var(--state-info)] underline underline-offset-2"
+            >
+              {CODIGOS_EMAIL}
+            </a>
+          </p>
         </div>
       </Fieldset>
 

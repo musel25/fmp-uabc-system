@@ -6,7 +6,7 @@ The site is the front door for organizing an event at the Faculty of Medicine an
 
 1. **Organizers** (professors, students, and now also people external to UABC renting faculty spaces) register an event with everything the coordination needs to evaluate it: dates, venue, modality, program, classification, SEAES categories, description, speakers, organizers, and whether dirección/subdirección already authorized it.
 2. **The coordination (admins)** works through a review queue, opens each request, and resolves it — approve (optionally with a note) or reject (with a mandatory reason the organizer must fix).
-3. **Email** keeps everyone in sync: the coordination hears about each new request, the organizer hears the resolution, and the codes team receives the "códigos 8 = 1" details for approved events.
+3. **Email** keeps everyone in sync: the coordination hears about each new request, the organizer hears the resolution, and administration receives the details of approved events. Organizers request their "códigos 8 = 1" directly from actividades8-1.fmptij@uabc.edu.mx; the wizard no longer asks how many they need.
 4. **Rejected events** can be edited by their owner and resubmitted, re-entering the queue.
 
 Rules the system enforces:

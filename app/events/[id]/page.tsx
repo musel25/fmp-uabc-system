@@ -204,9 +204,6 @@ export default function EventDetailPage() {
                     ? `Otro — ${event.classificationOther}`
                     : event.classification}
                 </Field>
-                <Field label="Códigos 8 = 1">
-                  <span className="font-data text-xs">{event.codigosRequeridos}</span>
-                </Field>
                 <Field label="Costo">
                   {event.hasCost ? "Con costo — contactar a educación continua" : "Sin costo"}
                 </Field>

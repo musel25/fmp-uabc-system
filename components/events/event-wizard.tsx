@@ -45,7 +45,6 @@ const eventSchema = z
     observations: z.string().optional(),
     programDetails: z.string().min(1, "La descripción del evento es requerida"),
     speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
-    codigosRequeridos: z.number().min(0, "El número debe ser mayor o igual a 0"),
     // Preguntas de opción: "" significa "sin contestar" y no pasa la validación
     isAuthorized: z
       .enum(["", "si", "no"])
@@ -103,7 +102,6 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       organizers: "",
       programDetails: "",
       speakerCvs: "",
-      codigosRequeridos: 0,
       isAuthorized: "",
       userType: "",
       seaesCategories: [],
@@ -146,7 +144,6 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
         "startDate",
         "endDate",
         "organizers",
-        "codigosRequeridos",
         "isAuthorized",
         "userType",
       ])

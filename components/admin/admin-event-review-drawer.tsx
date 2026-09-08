@@ -106,9 +106,6 @@ export function AdminEventReviewDrawer({
                 ? `Otro — ${event.classificationOther}`
                 : event.classification}
             </Field>
-            <Field label="Códigos 8 = 1">
-              <span className="font-data text-xs">{event.codigosRequeridos}</span>
-            </Field>
             <Field label="Costo">
               {event.hasCost ? "Con costo — requiere educación continua" : "Sin costo"}
             </Field>

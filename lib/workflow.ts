@@ -75,7 +75,7 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
       { text: `Descripción del evento: horarios, temas y ponentes (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
       { text: `Semblanza curricular de ponentes: nombres, títulos y experiencia (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
       { text: "Organizadores tal como deben aparecer en las constancias, separados por punto y coma." },
-      { text: "Número de códigos 8 = 1 requeridos." },
+      { text: "Si el evento requiere códigos 8 = 1, solicítalos por correo a actividades8-1.fmptij@uabc.edu.mx." },
     ],
     deadline: `${MIN_LEAD_DAYS} días naturales antes de la fecha de inicio`,
   },

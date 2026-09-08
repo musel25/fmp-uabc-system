@@ -36,7 +36,6 @@ interface EventRejectedNotification {
 interface AdminCodesNotification {
   eventName: string
   eventId: string
-  codigosRequeridos: number
   startDate: string
   endDate: string
   venue: string
@@ -337,8 +336,8 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
         subject: 'Códigos 8=1',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
-            <h2 style="color: #006341;">Evento Aprobado - Códigos Requeridos</h2>
-            <p>Se ha aprobado un nuevo evento que requiere códigos:</p>
+            <h2 style="color: #006341;">Evento Aprobado</h2>
+            <p>Se ha aprobado un nuevo evento:</p>
             
             <div style="background-color: #f5f5f5; padding: 25px; border-radius: 8px; margin: 20px 0;">
               <h3 style="margin-top: 0; color: #006341; margin-bottom: 20px;">INFORMACIÓN DEL EVENTO</h3>
@@ -368,10 +367,6 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
                   <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">CATEGORÍA:</td>
                   <td style="padding: 8px 0;">${category}</td>
                 </tr>
-                <tr>
-                  <td style="padding: 8px 0; vertical-align: top; font-weight: bold;">CANTIDAD DE CÓDIGOS SOLICITADOS:</td>
-                  <td style="padding: 8px 0; color: #006341; font-weight: bold;">${data.codigosRequeridos}</td>
-                </tr>
               </table>
               
               <div style="margin-top: 20px;">
@@ -391,9 +386,9 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
           </div>
         `,
         text: `
-Evento Aprobado - Códigos Requeridos
+Evento Aprobado
 
-Se ha aprobado un nuevo evento que requiere códigos:
+Se ha aprobado un nuevo evento:
 
 INFORMACIÓN DEL EVENTO
 ========================
@@ -409,8 +404,6 @@ HORA: ${startDateTime.time}
 LUGAR: ${data.venue}
 
 CATEGORÍA: ${category}
-
-CANTIDAD DE CÓDIGOS SOLICITADOS: ${data.codigosRequeridos}
 
 Descripción general del evento (máximo 250 caracteres):
 ${description}

@@ -61,9 +61,6 @@ export function EventReviewStep({ form }: EventReviewStepProps) {
               ? `Otro — ${data.classificationOther}`
               : data.classification}
           </Field>
-          <Field label="Códigos 8 = 1">
-            <span className="font-data text-xs">{data.codigosRequeridos}</span>
-          </Field>
           <Field label="Autorización">
             {data.isAuthorized === "si"
               ? "Autorizado por dirección o subdirección"

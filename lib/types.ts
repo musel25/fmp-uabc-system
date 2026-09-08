@@ -62,8 +62,6 @@ export interface Event {
   programDetails: string
   /** Speakers' curricular summaries (long text). */
   speakerCvs: string
-  /** Number of "códigos 8 = 1" (student credit codes) requested. */
-  codigosRequeridos: number
   /**
    * Whether dirección/subdirección had already authorized the event when it
    * was registered. `null` on rows created before this question existed.

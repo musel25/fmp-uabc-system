@@ -22,6 +22,12 @@ export const SEAES_CATEGORIES = [
   "La práctica basada en la evidencia",
 ] as const
 
+/**
+ * Where organizers request their "códigos 8 = 1". The wizard no longer asks
+ * how many codes an event needs — organizers request them directly here.
+ */
+export const CODIGOS_EMAIL = "actividades8-1.fmptij@uabc.edu.mx"
+
 /** Space rental fees shown to users external to UABC. */
 export const EXTERNAL_USER_COSTS = [
   { space: "Aula Magna", cost: "$2,500" },
@@ -82,7 +88,6 @@ export function eventToWizardValues(event: Event): Partial<EventWizardValues> {
     observations: event.observations,
     programDetails: event.programDetails,
     speakerCvs: event.speakerCvs,
-    codigosRequeridos: event.codigosRequeridos,
     isAuthorized: event.isAuthorized === null ? "" : event.isAuthorized ? "si" : "no",
     userType: event.userType ?? "",
     seaesCategories: event.seaesCategories,
