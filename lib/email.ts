@@ -328,7 +328,9 @@ export async function sendAdminCodesNotification(data: AdminCodesNotification): 
       },
       body: JSON.stringify({
         to: [
-          'actividades8-1.fmptij@uabc.edu.mx',
+          // Desactivado: no se notifica a actividades 8=1; ellos solicitan los
+          // codigos por su cuenta.
+          // 'actividades8-1.fmptij@uabc.edu.mx',
           'administracion.fmptij@uabc.edu.mx',
           'marisela.moreno@uabc.edu.mx'
         ],
