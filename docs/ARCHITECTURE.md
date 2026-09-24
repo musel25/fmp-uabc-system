@@ -11,7 +11,7 @@ The site is the front door for organizing an event at the Faculty of Medicine an
 
 Rules the system enforces:
 
-- Events need **at least 21 calendar days** of lead time (`MIN_LEAD_DAYS` in `lib/workflow.ts`).
+- Events need **at least 5 business days (Monday–Friday, Tijuana)** of lead time (`MIN_LEAD_BUSINESS_DAYS` in `lib/workflow.ts`).
 - Events that **charge attendees** are not registered here — the wizard stops and points to the continuing-education office.
 - **External users** see the space rental prices and payment instructions inside the wizard (`EXTERNAL_USER_COSTS` in `lib/event-form.ts`).
 - All dates are captured and displayed in **Tijuana time** and stored in UTC (`lib/timezone.ts`).

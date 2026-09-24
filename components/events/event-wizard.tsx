@@ -13,7 +13,7 @@ import { EventDataStep } from "./wizard-steps/event-data-step"
 import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
-import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import { MIN_LEAD_BUSINESS_DAYS, meetsRegistrationLead } from "@/lib/business-days"
 import { wizardValuesToCreateData, type EventWizardValues } from "@/lib/event-form"
 import { tijuanaLocalToUTC } from "@/lib/timezone"
 import { cn } from "@/lib/utils"
@@ -64,11 +64,10 @@ const eventSchema = z
   )
   .refine(
     (data) => {
-      const diffMs = new Date(data.startDate).getTime() - Date.now()
-      return diffMs >= MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+      return meetsRegistrationLead(data.startDate, new Date())
     },
     {
-      message: `Reagendar: no se cumple con el tiempo requerido (mínimo ${MIN_LEAD_DAYS} días de anticipación)`,
+      message: `Reagendar: no se cumple con el tiempo requerido (mínimo ${MIN_LEAD_BUSINESS_DAYS} días hábiles de anticipación)`,
       path: ["startDate"],
     },
   )
@@ -125,9 +124,8 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
       return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
     const startDate = form.watch("startDate")
     if (!startDate) return "Indica la fecha y hora de inicio."
-    const diffMs = new Date(startDate).getTime() - Date.now()
-    if (diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000)
-      return `La fecha de inicio debe estar al menos ${MIN_LEAD_DAYS} días después de hoy.`
+    if (!meetsRegistrationLead(startDate, new Date()))
+      return `La fecha de inicio debe estar al menos ${MIN_LEAD_BUSINESS_DAYS} días hábiles después de hoy.`
     return null
   })()
 
@@ -161,6 +159,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
+      if (!(await form.trigger())) return
       const values = form.getValues()
       const data = wizardValuesToCreateData({
         ...values,

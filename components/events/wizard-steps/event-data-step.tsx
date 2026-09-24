@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Info, TriangleAlert } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
-import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import { MIN_LEAD_BUSINESS_DAYS, earliestEventLocalDate, meetsRegistrationLead } from "@/lib/business-days"
 import {
   CODIGOS_EMAIL,
   EXTERNAL_USER_COSTS,
@@ -48,17 +48,8 @@ export function EventDataStep({ form }: EventDataStepProps) {
     )
   }
 
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const formatLocalForInput = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-
-  const earliestStart = new Date()
-  earliestStart.setDate(earliestStart.getDate() + MIN_LEAD_DAYS)
-  const minStartDateStr = formatLocalForInput(earliestStart)
-
-  const belowMinLead = startDate
-    ? new Date(startDate).getTime() - Date.now() < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
-    : false
+  const minStartDateStr = earliestEventLocalDate(new Date()) + "T00:00"
+  const belowMinLead = startDate ? !meetsRegistrationLead(startDate, new Date()) : false
 
   const handleModalityChange = (value: string) => {
     setValue("modality", value as CreateEventData["modality"])
@@ -285,18 +276,19 @@ export function EventDataStep({ form }: EventDataStepProps) {
           <Label htmlFor="startDate">Fecha y hora de inicio *</Label>
           <Input
             id="startDate"
+            onFocus={(e) => { e.currentTarget.min = earliestEventLocalDate(new Date()) + "T00:00" }}
             type="datetime-local"
             min={minStartDateStr}
             {...register("startDate")}
             className="mt-1"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Se requieren al menos {MIN_LEAD_DAYS} días de anticipación.
+            Se requieren al menos {MIN_LEAD_BUSINESS_DAYS} días hábiles de anticipación (lunes a viernes).
           </p>
           <FieldError message={errors.startDate?.message} />
           {!errors.startDate && belowMinLead && (
             <p className="mt-1 text-sm text-destructive">
-              Reagenda: no se cumplen los {MIN_LEAD_DAYS} días de anticipación.
+              Reagenda: no se cumplen los {MIN_LEAD_BUSINESS_DAYS} días hábiles de anticipación (lunes a viernes).
             </p>
           )}
         </div>

@@ -11,7 +11,9 @@
 import type { Event, EventStatus } from "@/lib/types"
 
 /** Anticipación mínima para registrar un evento. */
-export const MIN_LEAD_DAYS = 21
+export { MIN_LEAD_BUSINESS_DAYS } from "@/lib/business-days"
+import { MIN_LEAD_BUSINESS_DAYS, latestRegistrationLocalDate, tijuanaDate } from "@/lib/business-days"
+import { tijuanaLocalToUTC } from "@/lib/timezone"
 
 /** Plazo para subir evidencias, contado desde que termina el evento. */
 export const EVIDENCE_WINDOW_DAYS = 21
@@ -68,16 +70,16 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     step: "02",
     id: "registro",
     title: "Registro del evento",
-    when: `Al menos ${MIN_LEAD_DAYS} días antes`,
+    when: `Al menos ${MIN_LEAD_BUSINESS_DAYS} días antes`,
     summary:
-      "Captura el evento en la plataforma. El sistema no acepta fechas con menos de tres semanas de anticipación.",
+      "Captura el evento en la plataforma. El sistema no acepta fechas con menos de cinco días hábiles de anticipación.",
     tasks: [
       { text: `Descripción del evento: horarios, temas y ponentes (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
       { text: `Semblanza curricular de ponentes: nombres, títulos y experiencia (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
       { text: "Organizadores tal como deben aparecer en las constancias, separados por punto y coma." },
       { text: "Si el evento requiere códigos 8 = 1, solicítalos por correo a actividades8-1.fmptij@uabc.edu.mx." },
     ],
-    deadline: `${MIN_LEAD_DAYS} días naturales antes de la fecha de inicio`,
+    deadline: `${MIN_LEAD_BUSINESS_DAYS} días hábiles (lunes a viernes) antes de la fecha de inicio`,
   },
   {
     step: "03",
@@ -174,7 +176,7 @@ export function registrationDeadline(startDate: string): Date | null {
   if (!startDate) return null
   const start = new Date(startDate)
   if (Number.isNaN(start.getTime())) return null
-  return addDays(start, -MIN_LEAD_DAYS)
+  return new Date(tijuanaLocalToUTC(`${latestRegistrationLocalDate(tijuanaDate(start))}T23:59`))
 }
 
 export function hasEventEnded(event: Pick<Event, "endDate">, now: Date = new Date()): boolean {
@@ -353,7 +355,7 @@ export function currentPhaseId(event: Event, now: Date = new Date()): string {
 
 /** Avisos que aplican a todos los eventos, mostrados al final del registro. */
 export const SUBMISSION_NOTES: string[] = [
-  `Se requieren al menos ${MIN_LEAD_DAYS} días naturales de anticipación respecto a la fecha de inicio.`,
+  `Se requieren al menos ${MIN_LEAD_BUSINESS_DAYS} días hábiles (lunes a viernes) de anticipación respecto a la fecha de inicio.`,
   "Una vez enviado a revisión, no podrás editar el evento hasta recibir una respuesta.",
   "La revisión toma de 3 a 5 días hábiles y el resultado llega por correo — revisa la carpeta de spam.",
   "Tras la aprobación, entra de nuevo para reservar el espacio y descargar la plantilla de difusión.",
