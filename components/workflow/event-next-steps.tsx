@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AlarmClock, ArrowRight, CheckCircle2, ExternalLink, Info, TriangleAlert } from "lucide-react"
 import { nextStepFor, type EventNextStep, type NextStepTone } from "@/lib/workflow"
@@ -91,10 +92,9 @@ export function EventNextSteps({
                   size="sm"
                   variant={i === 0 ? "default" : "outline"}
                   className={i === 0 ? "btn-primary" : "bg-card"}
-                  onClick={() => window.open(action.href, "_blank", "noopener,noreferrer")}
+                  asChild
                 >
-                  {action.label}
-                  <ExternalLink className="ml-1.5 h-3 w-3" aria-hidden="true" />
+                  {action.kind === "internal" ? <Link href={action.href}>{action.label}</Link> : <a href={action.href} target="_blank" rel="noopener noreferrer">{action.label}<ExternalLink className="ml-1.5 h-3 w-3" aria-hidden="true" /></a>}
                 </Button>
               ))}
             </div>

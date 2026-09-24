@@ -7,6 +7,8 @@ import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { EventChecklist } from "@/components/workflow/event-checklist"
+import { getEventProgress } from "@/lib/supabase-progress"
 import { AttendancePanel } from "@/components/events/attendance-panel"
 import { EventNextSteps } from "@/components/workflow/event-next-steps"
 import { ProcessRail } from "@/components/workflow/process-guide"
@@ -32,12 +34,15 @@ import {
 } from "@/lib/workflow"
 import { semesterOf } from "@/lib/semester"
 import { COORDINATION_EMAIL } from "@/components/layout/header"
-import type { Event } from "@/lib/types"
+import type { Event, EventProgress } from "@/lib/types"
 
 export default function EventDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const [progress,setProgress]=useState<EventProgress>({state:"unavailable"})
+  const [isOwner,setIsOwner]=useState(false)
+  const refreshProgress=async()=>{const p=await getEventProgress([params.id as string]);setProgress(p[params.id as string])}
   const [event, setEvent] = useState<Event | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -79,6 +84,9 @@ export default function EventDetailPage() {
         }
 
         setEvent(found)
+        setIsOwner(found.userId===user.id)
+        const summaries=await getEventProgress([found.id])
+        if(mounted)setProgress(summaries[found.id])
       } catch (err) {
         console.error("Load event error:", err)
         if (!mounted) return
@@ -99,7 +107,7 @@ export default function EventDetailPage() {
     }
   }, [params.id, router, toast])
 
-  const next = useMemo(() => (event ? nextStepFor(event) : null), [event])
+  const next = useMemo(() => (event ? nextStepFor(event, new Date(), progress) : null), [event, progress])
   const deadline = useMemo(() => (event ? evidenceDeadline(event) : null), [event])
 
   if (isLoading) {
@@ -181,6 +189,7 @@ export default function EventDetailPage() {
 
         {next && <EventNextSteps event={event} step={next} className="mb-6" />}
 
+        <div className="no-print mb-6"><EventChecklist event={event} progress={progress} canEdit={isOwner} onChange={()=>void refreshProgress()}/></div>
         <ProcessRail activePhaseId={next?.phaseId} className="no-print mb-6" />
 
         <div className="print-flow grid gap-6 lg:grid-cols-3">
@@ -281,43 +290,7 @@ export default function EventDetailPage() {
 
           <aside className="space-y-6">
             {event.status === "aprobado" && <AttendancePanel event={event} />}
-            {event.status === "aprobado" && (
-              <section className="card-uabc no-print p-5">
-                <h2 className="font-display text-base font-semibold text-ink">Trámites</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Formularios institucionales. Se abren en una pestaña nueva.
-                </p>
-                <div className="mt-4 space-y-2">
-                  <Button asChild className="w-full"><Link href={`/events/${event.id}/report`}>Completar / consultar reporte final</Link></Button>
-                  <LinkButton
-                    href={WORKFLOW_LINKS.reservarEspacio}
-                    icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
-                    label="Reservar espacio"
-                  />
-                  <LinkButton
-                    href={WORKFLOW_LINKS.plantillaDifusion}
-                    icon={<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />}
-                    label="Plantilla de difusión"
-                  />
-                  <LinkButton
-                    href={WORKFLOW_LINKS.registroAsistencia}
-                    icon={<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />}
-                    label="Registro de asistencia"
-                  />
-                  <LinkButton
-                    href={WORKFLOW_LINKS.evidencias}
-                    icon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                    label={EVIDENCE_ACTION_LABEL}
-                    primary
-                  />
-                </div>
-                {deadline && (
-                  <p className="font-data mt-3 text-xs text-muted-foreground">
-                    Evidencias hasta el {formatLongDate(deadline)}
-                  </p>
-                )}
-              </section>
-            )}
+
 
             <section className="card-uabc p-5">
               <h2 className="font-display text-base font-semibold text-ink">Contacto</h2>

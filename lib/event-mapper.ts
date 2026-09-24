@@ -97,3 +97,9 @@ export function dbRowToAttendanceSummary(eventId:string,r:EventRow|null,enabled:
 export function dbRowToAttendanceResponse(r:EventRow):AttendanceResponse{return{eventId:r.event_id as string,sourceResponseId:r.source_response_id as string,submittedAt:r.submitted_at as string,name:r.name as string,email:r.email as string|null,category:r.category as AttendanceResponse['category']}}
 export function dbRowToPreparation(r:EventRow|null):PreparationValues{return{reservationDone:r?.reservation_done===true,diffusionDone:r?.diffusion_done===true,qrShared:r?.qr_shared===true}}
 export function dbRowToWorkflowSettings(r:EventRow):WorkflowSettings{return{reportsRolloutAt:r.reports_rollout_at as string|null,attendancePublishedUrl:r.attendance_published_url as string|null,attendancePrefillTemplate:r.attendance_prefill_template as string|null,attendanceEnabled:r.attendance_enabled===true}}
+
+import type { EventProgress } from './types'
+export function dbRowsToProgress(event:EventRow,report:EventRow|null,preparation:EventRow|null,sync:EventRow|null,settings:WorkflowSettings):EventProgress{
+ const r=report?dbRowToEventReport(report):null
+ return {state:'loaded',report:r,preparation:dbRowToPreparation(preparation),attendance:dbRowToAttendanceSummary(event.id as string,sync,settings.attendanceEnabled&&!!settings.attendancePrefillTemplate),tracking:!r&&(!settings.reportsRolloutAt||new Date(event.end_date as string)<new Date(settings.reportsRolloutAt))?'legacy':'current'}
+}

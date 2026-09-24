@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { AlarmClock, CalendarDays, Eye, MapPin, Pencil, ExternalLink } from "lucide-react"
 import { nextStepFor, formatDateRange } from "@/lib/workflow"
 import { semesterOf } from "@/lib/semester"
-import type { Event } from "@/lib/types"
+import type { Event, EventProgress } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 /**
@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils"
  * persona con este evento y cuándo vence — que es lo que la gente venía a
  * averiguar.
  */
-export function EventCard({ event }: { event: Event }) {
-  const next = nextStepFor(event)
+export function EventCard({ event, progress }: { event: Event; progress?: EventProgress }) {
+  const next = nextStepFor(event, new Date(), progress)
   const semester = semesterOf(event.startDate)
   const primaryAction = next.actions[0]
 
@@ -103,10 +103,9 @@ export function EventCard({ event }: { event: Event }) {
             size="sm"
             variant="outline"
             className="w-full"
-            onClick={() => window.open(primaryAction.href, "_blank", "noopener,noreferrer")}
+            asChild
           >
-            <span className="truncate">{primaryAction.label}</span>
-            <ExternalLink className="ml-1.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            {primaryAction.kind === "internal" ? <Link href={primaryAction.href}>{primaryAction.label}</Link> : <a href={primaryAction.href} target="_blank" rel="noopener noreferrer">{primaryAction.label}<ExternalLink className="ml-1.5 h-3 w-3 shrink-0" aria-hidden="true" /></a>}
           </Button>
         )}
       </div>

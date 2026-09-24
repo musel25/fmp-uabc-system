@@ -17,11 +17,14 @@ import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
 import { nextStepFor } from "@/lib/workflow"
-import type { Event, EventStatus } from "@/lib/types"
+import { getEventProgress } from "@/lib/supabase-progress"
+import { isPendingReport } from "@/lib/event-progress"
+import type { Event, EventStatus, EventProgress } from "@/lib/types"
 
 type Tab = "todos" | "en_revision" | "aprobado" | "rechazado"
 
 export default function DashboardPage() {
+  const [progress,setProgress]=useState<Record<string,EventProgress>>({})
   const [events, setEvents] = useState<Event[]>([])
   const [activeTab, setActiveTab] = useState<Tab>("todos")
   const [search, setSearch] = useState("")
@@ -46,6 +49,8 @@ export default function DashboardPage() {
 
         const userEvents = await getUserEvents(user.id)
         if (mounted) setEvents(userEvents)
+        const summaries=await getEventProgress(userEvents.map(e=>e.id))
+        if(mounted)setProgress(summaries)
       } catch (err) {
         console.error("Load events error:", err)
         if (!mounted) return
@@ -77,14 +82,10 @@ export default function DashboardPage() {
   }, [events])
 
   /** Eventos aprobados que ya terminaron y siguen sin evidencias en plazo. */
-  const pendingEvidence = useMemo(
-    () =>
-      events.filter((e) => {
-        const step = nextStepFor(e)
-        return step.phaseId === "evidencias"
-      }).length,
-    [events],
-  )
+  const pendingEvidence = useMemo(()=>{
+    const states=events.map(e=>isPendingReport(e,progress[e.id]??{state:'unavailable'},new Date()))
+    return states.some(s=>s===null)?null:states.filter(Boolean).length
+  },[events,progress])
 
   const filteredEvents = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -103,10 +104,10 @@ export default function DashboardPage() {
   /** Fase del proceso a resaltar en la ruta: la del evento más urgente. */
   const activePhaseId = useMemo(() => {
     if (events.length === 0) return "autorizacion"
-    const urgent = events.find((e) => nextStepFor(e).tone === "urgent")
+    const urgent = events.find((e) => nextStepFor(e,new Date(),progress[e.id]).tone === "urgent")
     const target = urgent ?? events.find((e) => e.status === "aprobado") ?? events[0]
-    return nextStepFor(target).phaseId
-  }, [events])
+    return nextStepFor(target,new Date(),progress[target.id]).phaseId
+  }, [events,progress])
 
   return (
     <ProtectedRoute>
@@ -136,10 +137,10 @@ export default function DashboardPage() {
           <StatCard label="Aprobados" value={counts.aprobado} tone="approved" />
           <StatCard
             label="Evidencias pendientes"
-            value={pendingEvidence}
-            tone={pendingEvidence > 0 ? "pending" : "neutral"}
-            caption={
-              pendingEvidence > 0
+            value={pendingEvidence ?? "—"}
+            tone={(pendingEvidence ?? 0) > 0 ? "pending" : "neutral"}
+            caption={pendingEvidence === null ? "Seguimiento no disponible" :
+              (pendingEvidence ?? 0) > 0
                 ? "Eventos ya realizados sin evidencias"
                 : "Nada pendiente por entregar"
             }
@@ -208,7 +209,7 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.id} event={event} progress={progress[event.id]} />
                 ))}
               </div>
             )}
