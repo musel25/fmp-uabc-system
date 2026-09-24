@@ -53,3 +53,7 @@ snapshots solo se leen por propietario/admin, y la fuente firma la ingestión.
 `workflow_settings` contiene configuración pública; únicamente admin la modifica.
 `private.attendance_integrations` nunca se expone: no tiene permisos para clientes.
 El calendario de registro valida cinco días hábiles en Tijuana; no afecta aprobaciones.
+
+## Reportes finales y seguimiento
+
+Migraciones `003_registration_business_days.sql`, `004_event_reporting.sql`, `005_google_attendance_sync.sql`: trigger de cinco días hábiles, tablas de reportes/preparación/asistencia/configuración y RPC firmada. RLS permite lectura al propietario y administradores; las tablas de reportes/asistencia no aceptan escritura directa del cliente. `save_event_report` valida propietario, aprobación, fin de evento, versión y exención. Secretos y versiones de respuestas permanecen en esquema `private`, sin acceso anon/authenticated.

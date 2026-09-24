@@ -27,3 +27,7 @@ No service-role key is used anywhere, on purpose.
 - **Promote an admin:** Supabase Dashboard → Table Editor → `profiles` → set `role = 'admin'`. There is deliberately no in-app way to do this.
 - **Auth emails** (confirmation, password reset) are sent by Supabase itself and configured in the Supabase dashboard, separate from Resend.
 - **Backups / data:** standard Supabase tooling; the app performs no deletes (no DELETE policies), so data loss via the app is not possible.
+
+## Reportes finales y seguimiento
+
+Aplicar migraciones 003, 004 y 005 en orden antes del frontend. Mantener `reports_rollout_at` nulo hasta verificar el despliegue; entonces establecer explícitamente el instante de corte (UTC) en `public.workflow_settings`. No marcar retrospectivamente todos los eventos sin reporte como pendientes. Google puede seguir sin configurar: se permite lista alternativa. Si es necesario revertir, restaurar el frontend anterior conservando tablas y datos; no ejecutar eliminaciones. La integración se deshabilita mediante `private.attendance_integrations.enabled`. Consultar [pruebas y límites](REPORTING_ACCEPTANCE.md).

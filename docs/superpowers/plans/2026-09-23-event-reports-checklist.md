@@ -443,3 +443,7 @@ it("genera CSV seguro y legible en Excel", () => {
 ## Mensaje de traspaso para ejecutar
 
 «Implementa `docs/superpowers/plans/2026-09-23-event-reports-checklist.md` siguiendo su spec enlazada. Empieza por la tarea 1 de cinco días hábiles. Ejecuta las tareas secuencialmente con pruebas de reglas y permisos; haz commit convencional y push por cada unidad. Conserva correos y RLS existentes, no añadas service-role keys, no inventes IDs de Google y no incluyas secretos en código ni documentación. Configura la conexión institucional solo con valores reales de coordinación; mientras tanto debe aparecer sin verificar. No confundas haber terminado el código con haber comprobado la integración en producción.»
+
+## Registro de ejecución
+
+Tareas 1–7 implementadas en `codex/event-reports-checklist`. La tarea 8 tiene documentación y verificaciones independientes completadas, migraciones 003–005 aplicadas al proyecto vinculado y conexión institucional pendiente de los IDs/configuración de coordinación. No se necesita una migración 006: la configuración de workflow forma parte de 004. Consultar [REPORTING_ACCEPTANCE.md](../../REPORTING_ACCEPTANCE.md) para pruebas efectivamente realizadas y límites de la verificación; el checklist original anterior es la especificación de aceptación, no evidencia de pruebas institucionales realizadas.

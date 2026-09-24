@@ -59,3 +59,7 @@ Do the migration **first**: the code must never reference a column production do
 **Change who receives notification emails** — recipient addresses are in `lib/email.ts`, one sender function per notification.
 
 **Change RLS / permissions** — new migration; then update the policy table in `docs/DATABASE.md` and `schema.sql`. Test with a non-admin account before trusting it.
+
+## Reportes finales y seguimiento
+
+`npm test` ejecuta Vitest. Para SQL, usar una base local desechable con `tests/database/bootstrap.sql`, luego `schema.sql`, y ejecutar `scripts/test-database.mjs` con los tres archivos en `tests/database/`. El script acepta `FMP_TEST_DATABASE_URL` solo local; por defecto usa el contenedor PostgreSQL `fmp-reporting-tests`. No apuntar fixtures a producción. Véase [aceptación](REPORTING_ACCEPTANCE.md).

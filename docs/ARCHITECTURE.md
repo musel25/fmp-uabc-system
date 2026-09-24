@@ -61,3 +61,7 @@ The six-phase process guide shown to users (authorization, registration, review,
 | `/admin/analytics` | admin | Per-semester charts |
 
 Component-by-component detail: `docs/COMPONENTS.md`.
+
+## Reportes finales y seguimiento
+
+El reporte final es nativo: rutas `/events/[id]/report` y `/events/[id]/attendance-list`. `lib/supabase-reports.ts`, `supabase-progress.ts` y `supabase-attendance.ts` consultan Supabase bajo RLS. Escrituras de reporte/preparación usan RPC acotadas; Google usa HMAC con secreto privado. La interfaz nunca recibe ese secreto. Ver [configuración de asistencia](GOOGLE_ATTENDANCE_SETUP.md).

@@ -59,3 +59,7 @@ How each piece works and where to look when changing behavior. `components/ui/` 
 
 - `hooks/use-toast.ts` — toast store used for every success/failure message.
 - `hooks/use-mobile.ts` — viewport breakpoint helper.
+
+## Reportes finales y seguimiento
+
+`EventReportForm`, `ReportOrganizers`, `ReportEvidence` y `ReportReceipt` implementan captura, revisión y comprobante. `EventChecklist` combina confirmaciones manuales con datos verificados. `AttendancePanel` genera QR local, instrucciones y descarga de participantes. `ReportAnalytics` muestra resultados separados de las solicitudes existentes.
