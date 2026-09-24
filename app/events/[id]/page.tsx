@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { AttendancePanel } from "@/components/events/attendance-panel"
 import { EventNextSteps } from "@/components/workflow/event-next-steps"
 import { ProcessRail } from "@/components/workflow/process-guide"
 import {
@@ -279,6 +280,7 @@ export default function EventDetailPage() {
           </div>
 
           <aside className="space-y-6">
+            {event.status === "aprobado" && <AttendancePanel event={event} />}
             {event.status === "aprobado" && (
               <section className="card-uabc no-print p-5">
                 <h2 className="font-display text-base font-semibold text-ink">Trámites</h2>
