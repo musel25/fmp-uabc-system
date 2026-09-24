@@ -12,7 +12,12 @@ import type { Event, EventStatus, EventProgress } from "@/lib/types"
 
 /** Anticipación mínima para registrar un evento. */
 export { MIN_LEAD_BUSINESS_DAYS } from "@/lib/business-days"
-import { MIN_LEAD_BUSINESS_DAYS, latestRegistrationLocalDate, tijuanaDate, addCivilDays } from "@/lib/business-days"
+import {
+  MIN_LEAD_BUSINESS_DAYS,
+  latestRegistrationLocalDate,
+  tijuanaDate,
+  addCivilDays,
+} from "@/lib/business-days"
 import { tijuanaLocalToUTC } from "@/lib/timezone"
 
 /** Plazo para subir evidencias, contado desde que termina el evento. */
@@ -60,7 +65,9 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     summary:
       "Dirección o subdirección autoriza el evento. En el registro indicarás si ya cuentas con esa autorización.",
     tasks: [
-      { text: "Envía tu propuesta a dirección o subdirección y espera su autorización." },
+      {
+        text: "Envía tu propuesta a dirección o subdirección y espera su autorización.",
+      },
       {
         text: "Si el evento tiene costo, contacta al responsable de educación continua antes de continuar.",
       },
@@ -70,14 +77,22 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     step: "02",
     id: "registro",
     title: "Registro del evento",
-    when: `Al menos ${MIN_LEAD_BUSINESS_DAYS} días antes`,
+    when: `Al menos ${MIN_LEAD_BUSINESS_DAYS} días hábiles antes`,
     summary:
       "Captura el evento en la plataforma. El sistema no acepta fechas con menos de cinco días hábiles de anticipación.",
     tasks: [
-      { text: `Descripción del evento: horarios, temas y ponentes (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
-      { text: `Semblanza curricular de ponentes: nombres, títulos y experiencia (máx. ${MAX_WORDS_LONG_FIELD} palabras).` },
-      { text: "Organizadores tal como deben aparecer en las constancias, separados por punto y coma." },
-      { text: "Si el evento requiere códigos 8 = 1, solicítalos por correo a actividades8-1.fmptij@uabc.edu.mx." },
+      {
+        text: `Descripción del evento: horarios, temas y ponentes (máx. ${MAX_WORDS_LONG_FIELD} palabras).`,
+      },
+      {
+        text: `Semblanza curricular de ponentes: nombres, títulos y experiencia (máx. ${MAX_WORDS_LONG_FIELD} palabras).`,
+      },
+      {
+        text: "Organizadores tal como deben aparecer en las constancias, separados por punto y coma.",
+      },
+      {
+        text: "Si el evento requiere códigos 8 = 1, solicítalos por correo a actividades8-1.fmptij@uabc.edu.mx.",
+      },
     ],
     deadline: `${MIN_LEAD_BUSINESS_DAYS} días hábiles (lunes a viernes) antes de la fecha de inicio`,
   },
@@ -89,8 +104,12 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     summary:
       "La coordinación revisa la solicitud. Mientras esté en revisión el evento no se puede editar.",
     tasks: [
-      { text: "Recibirás el resultado por correo electrónico. Revisa también la carpeta de spam." },
-      { text: "Si el evento se rechaza, podrás editarlo y enviarlo de nuevo con los ajustes indicados." },
+      {
+        text: "Recibirás el resultado por correo electrónico. Revisa también la carpeta de spam.",
+      },
+      {
+        text: "Si el evento se rechaza, podrás editarlo y enviarlo de nuevo con los ajustes indicados.",
+      },
     ],
   },
   {
@@ -103,11 +122,17 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     tasks: [
       {
         text: "Reserva el espacio donde se realizará el evento.",
-        link: { href: WORKFLOW_LINKS.reservarEspacio, label: "Reservar espacio" },
+        link: {
+          href: WORKFLOW_LINKS.reservarEspacio,
+          label: "Reservar espacio",
+        },
       },
       {
         text: "Descarga la plantilla institucional de difusión.",
-        link: { href: WORKFLOW_LINKS.plantillaDifusion, label: "Plantilla de difusión" },
+        link: {
+          href: WORKFLOW_LINKS.plantillaDifusion,
+          label: "Plantilla de difusión",
+        },
       },
     ],
   },
@@ -119,11 +144,16 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     summary:
       "Reúne lo que después se te pedirá como evidencia. Usa el registro de participantes o conserva una lista alternativa.",
     tasks: [
-      { text: "Comparte el QR del evento con los participantes; cada persona registra su asistencia." },
+      {
+        text: "Comparte el QR del evento con los participantes; cada persona registra su asistencia.",
+      },
       { text: "Toma fotografías del evento." },
       {
         text: "Este formulario lo llena cada participante, no el organizador.",
-        link: { href: WORKFLOW_LINKS.registroAsistencia, label: "Registro de asistencia" },
+        link: {
+          href: WORKFLOW_LINKS.registroAsistencia,
+          label: "Registro de asistencia",
+        },
       },
     ],
   },
@@ -137,7 +167,6 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
     tasks: [
       {
         text: "Completa el reporte final en la ficha de tu evento. La lista alternativa se pide cuando no hay respuestas electrónicas verificadas.",
-
       },
     ],
     deadline: `${EVIDENCE_WINDOW_DAYS} días naturales después de que termina el evento`,
@@ -160,7 +189,11 @@ function startOfDay(date: Date): Date {
 }
 
 export function daysUntil(target: Date, from: Date = new Date()): number {
-  return Math.round((new Date(tijuanaDate(target)).getTime() - new Date(tijuanaDate(from)).getTime()) / DAY_MS)
+  return Math.round(
+    (new Date(tijuanaDate(target)).getTime() -
+      new Date(tijuanaDate(from)).getTime()) /
+      DAY_MS,
+  )
 }
 
 /** Último día para subir evidencias: fin del evento + tres semanas. */
@@ -168,7 +201,13 @@ export function evidenceDeadline(event: Pick<Event, "endDate">): Date | null {
   if (!event.endDate) return null
   const end = new Date(event.endDate)
   if (Number.isNaN(end.getTime())) return null
-  return new Date(tijuanaLocalToUTC(`${addCivilDays(tijuanaDate(end), EVIDENCE_WINDOW_DAYS)}T23:59`))
+  return new Date(
+    new Date(
+      tijuanaLocalToUTC(
+        `${addCivilDays(tijuanaDate(end), EVIDENCE_WINDOW_DAYS + 1)}T00:00`,
+      ),
+    ).getTime() - 1,
+  )
 }
 
 /** Fecha límite para registrar un evento que inicia en `startDate`. */
@@ -176,10 +215,17 @@ export function registrationDeadline(startDate: string): Date | null {
   if (!startDate) return null
   const start = new Date(startDate)
   if (Number.isNaN(start.getTime())) return null
-  return new Date(tijuanaLocalToUTC(`${latestRegistrationLocalDate(tijuanaDate(start))}T23:59`))
+  return new Date(
+    tijuanaLocalToUTC(
+      `${latestRegistrationLocalDate(tijuanaDate(start))}T23:59`,
+    ),
+  )
 }
 
-export function hasEventEnded(event: Pick<Event, "endDate">, now: Date = new Date()): boolean {
+export function hasEventEnded(
+  event: Pick<Event, "endDate">,
+  now: Date = new Date(),
+): boolean {
   if (!event.endDate) return false
   const end = new Date(event.endDate)
   if (Number.isNaN(end.getTime())) return false
@@ -233,7 +279,8 @@ export function formatDateRange(startISO: string, endISO: string): string {
   if (sameDay) return formatShortDate(start)
 
   const sameMonth =
-    start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
 
   if (sameMonth) {
     const day = new Intl.DateTimeFormat("es-MX", {
@@ -267,15 +314,121 @@ export interface EventNextStep {
  * Traduce el estado de un evento a la instrucción que le toca a la persona
  * ahora mismo, con la fecha límite real ya resuelta.
  */
-export function nextStepFor(event: Event, now: Date = new Date(), progress?: EventProgress): EventNextStep {
-  if(event.status==='en_revision')return {tone:'info',phaseId:'revision',title:'En revisión por la coordinación',detail:'Recibirás el resultado por correo. Mientras tanto, la solicitud no se puede editar.',actions:[]}
-  if(event.status==='rechazado')return {tone:'blocked',phaseId:'revision',title:'Requiere cambios',detail:event.rejectionReason||'Revisa las observaciones de coordinación.',actions:[{kind:'internal',href:`/events/${event.id}/edit`,label:'Corregir solicitud'}]}
-  if(!progress||progress.state==='unavailable')return {tone:'info',phaseId:'preparacion',title:'Consulta el seguimiento de tu evento',detail:'Abre la checklist para consultar asistencia y reporte.',actions:[{kind:'internal',href:`/events/${event.id}`,label:'Ver checklist'}]}
-  if(progress.report?.status==='submitted')return {tone:'done',phaseId:'evidencias',title:'Reporte recibido',detail:'Tu entrega quedó registrada. Puedes consultarla o enviar correcciones.',actions:[{kind:'internal',href:`/events/${event.id}/report`,label:'Consultar reporte'}]}
-  if(!hasEventEnded(event,now))return {tone:'action',phaseId:'preparacion',title:'Prepara el evento y comparte el registro',detail:'Cada participante debe registrar su propia asistencia. Comparte el QR del evento y conserva fotografías.',actions:[{kind:'internal',href:`/events/${event.id}#asistencia`,label:'Ver QR para participantes'}]}
-  if(progress.tracking==='legacy')return {tone:'info',phaseId:'evidencias',title:'Sin seguimiento en plataforma',detail:'Este evento es anterior al nuevo seguimiento. Sus evidencias pudieron entregarse por el procedimiento anterior.',actions:[{kind:'internal',href:`/events/${event.id}/report`,label:'Registrar reporte en plataforma'},{kind:'external',href:WORKFLOW_LINKS.evidencias,label:'Formulario del proceso anterior'}]}
-  const deadline=evidenceDeadline(event),remaining=deadline?daysUntil(deadline,now):null
-  return {tone:remaining!==null&&remaining<=7?'urgent':'action',phaseId:'evidencias',title:remaining!==null&&remaining<0?'Reporte fuera de plazo':'Completa tu reporte final',detail:'Registra asistentes, organizadores, enlaces de evidencias y reseña. La lista es opcional cuando hay asistencia electrónica verificada.',deadline:deadline?`${remaining!==null&&remaining<0?'Venció':'Entrega hasta'} el ${formatLongDate(deadline)}`:undefined,actions:[{kind:'internal',href:`/events/${event.id}/report`,label:'Completar reporte final'}]}
+export function nextStepFor(
+  event: Event,
+  now: Date = new Date(),
+  progress?: EventProgress,
+): EventNextStep {
+  if (event.status === "en_revision")
+    return {
+      tone: "info",
+      phaseId: "revision",
+      title: "En revisión por la coordinación",
+      detail:
+        "Recibirás el resultado por correo. Mientras tanto, la solicitud no se puede editar.",
+      actions: [],
+    }
+  if (event.status === "rechazado")
+    return {
+      tone: "blocked",
+      phaseId: "revision",
+      title: "Requiere cambios",
+      detail:
+        event.rejectionReason || "Revisa las observaciones de coordinación.",
+      actions: [
+        {
+          kind: "internal",
+          href: `/events/${event.id}/edit`,
+          label: "Corregir solicitud",
+        },
+      ],
+    }
+  if (!progress || progress.state === "unavailable")
+    return {
+      tone: "info",
+      phaseId: "preparacion",
+      title: "Consulta el seguimiento de tu evento",
+      detail: "Abre la checklist para consultar asistencia y reporte.",
+      actions: [
+        {
+          kind: "internal",
+          href: `/events/${event.id}`,
+          label: "Ver checklist",
+        },
+      ],
+    }
+  if (progress.report?.status === "submitted")
+    return {
+      tone: "done",
+      phaseId: "evidencias",
+      title: "Reporte recibido",
+      detail:
+        "Tu entrega quedó registrada. Puedes consultarla o enviar correcciones.",
+      actions: [
+        {
+          kind: "internal",
+          href: `/events/${event.id}/report`,
+          label: "Consultar reporte",
+        },
+      ],
+    }
+  if (!hasEventEnded(event, now))
+    return {
+      tone: "action",
+      phaseId: "preparacion",
+      title: "Prepara el evento y comparte el registro",
+      detail:
+        "Cada participante debe registrar su propia asistencia. Comparte el QR del evento y conserva fotografías.",
+      actions: [
+        {
+          kind: "internal",
+          href: `/events/${event.id}#asistencia`,
+          label: "Ver QR para participantes",
+        },
+      ],
+    }
+  if (progress.tracking === "legacy")
+    return {
+      tone: "info",
+      phaseId: "evidencias",
+      title: "Sin seguimiento en plataforma",
+      detail:
+        "Este evento es anterior al nuevo seguimiento. Sus evidencias pudieron entregarse por el procedimiento anterior.",
+      actions: [
+        {
+          kind: "internal",
+          href: `/events/${event.id}/report`,
+          label: "Registrar reporte en plataforma",
+        },
+        {
+          kind: "external",
+          href: WORKFLOW_LINKS.evidencias,
+          label: "Formulario del proceso anterior",
+        },
+      ],
+    }
+  const deadline = evidenceDeadline(event),
+    remaining = deadline ? daysUntil(deadline, now) : null
+  return {
+    tone: remaining !== null && remaining <= 7 ? "urgent" : "action",
+    phaseId: "evidencias",
+    title:
+      remaining !== null && remaining < 0
+        ? "Reporte fuera de plazo"
+        : "Completa tu reporte final",
+    detail:
+      "Registra asistentes, organizadores, enlaces de evidencias y reseña. La lista es opcional cuando hay asistencia electrónica verificada.",
+    deadline: deadline
+      ? `${remaining !== null && remaining < 0 ? "Venció" : "Entrega hasta"} el ${formatLongDate(deadline)}`
+      : undefined,
+    actions: [
+      {
+        kind: "internal",
+        href: `/events/${event.id}/report`,
+        label: "Completar reporte final",
+      },
+    ],
+  }
 }
 
 /** Fase del proceso en la que se encuentra el evento, para resaltarla en la guía. */

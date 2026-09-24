@@ -3,7 +3,14 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { AlarmClock, CalendarDays, Eye, MapPin, Pencil, ExternalLink } from "lucide-react"
+import {
+  AlarmClock,
+  CalendarDays,
+  Eye,
+  MapPin,
+  Pencil,
+  ExternalLink,
+} from "lucide-react"
 import { nextStepFor, formatDateRange } from "@/lib/workflow"
 import { semesterOf } from "@/lib/semester"
 import type { Event, EventProgress } from "@/lib/types"
@@ -14,7 +21,13 @@ import { cn } from "@/lib/utils"
  * persona con este evento y cuándo vence — que es lo que la gente venía a
  * averiguar.
  */
-export function EventCard({ event, progress }: { event: Event; progress?: EventProgress }) {
+export function EventCard({
+  event,
+  progress,
+}: {
+  event: Event
+  progress?: EventProgress
+}) {
   const next = nextStepFor(event, new Date(), progress)
   const semester = semesterOf(event.startDate)
   const primaryAction = next.actions[0]
@@ -24,7 +37,10 @@ export function EventCard({ event, progress }: { event: Event; progress?: EventP
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-3">
           <h3 className="font-display text-base leading-snug font-semibold text-balance text-ink">
-            <Link href={`/events/${event.id}`} className="rounded-sm hover:underline">
+            <Link
+              href={`/events/${event.id}`}
+              className="rounded-sm hover:underline"
+            >
               {event.name}
             </Link>
           </h3>
@@ -76,7 +92,12 @@ export function EventCard({ event, progress }: { event: Event; progress?: EventP
                 : "text-muted-foreground",
           )}
         >
-          {next.deadline && <AlarmClock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+          {next.deadline && (
+            <AlarmClock
+              className="mt-px h-3.5 w-3.5 shrink-0"
+              aria-hidden="true"
+            />
+          )}
           <span>{next.deadline ?? next.title}</span>
         </p>
       </div>
@@ -99,13 +120,22 @@ export function EventCard({ event, progress }: { event: Event; progress?: EventP
         )}
 
         {event.status === "aprobado" && primaryAction && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full"
-            asChild
-          >
-            {primaryAction.kind === "internal" ? <Link href={primaryAction.href}>{primaryAction.label}</Link> : <a href={primaryAction.href} target="_blank" rel="noopener noreferrer">{primaryAction.label}<ExternalLink className="ml-1.5 h-3 w-3 shrink-0" aria-hidden="true" /></a>}
+          <Button size="sm" variant="outline" className="w-full" asChild>
+            {primaryAction.kind === "internal" ? (
+              <Link href={primaryAction.href}>{primaryAction.label}</Link>
+            ) : (
+              <a
+                href={primaryAction.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {primaryAction.label}
+                <ExternalLink
+                  className="ml-1.5 h-3 w-3 shrink-0"
+                  aria-hidden="true"
+                />
+              </a>
+            )}
           </Button>
         )}
       </div>

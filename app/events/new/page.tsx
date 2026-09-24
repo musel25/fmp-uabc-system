@@ -33,7 +33,8 @@ export default function NewEventPage() {
 
       toast({
         title: "Evento enviado a revisión",
-        description: "La coordinación responderá por correo en 3 a 5 días hábiles.",
+        description:
+          "La coordinación responderá por correo en 3 a 5 días hábiles.",
       })
 
       router.push(`/events/${newEvent.id}`)

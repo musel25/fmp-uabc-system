@@ -16,13 +16,20 @@ export type Semester = string // "2026-1" | "2026-2" | …
 const SECOND_TERM_START_MONTH = 7
 
 /** Reads event calendar parts in Tijuana, regardless of UTC/device timezone. */
-function calendarParts(dateISO: string): {year:number;month:number}|null {
-  if(!dateISO)return null
-  let date=dateISO
-  if(dateISO.includes('T')){const instant=new Date(dateISO);if(Number.isNaN(instant.getTime()))return null;date=tijuanaDate(instant)}
-  const match=/^(\d{4})-(\d{2})/.exec(date)
-  if(!match)return null
-  const month=Number(match[2]);return month>=1&&month<=12?{year:Number(match[1]),month}:null
+function calendarParts(
+  dateISO: string,
+): { year: number; month: number } | null {
+  if (!dateISO) return null
+  let date = dateISO
+  if (dateISO.includes("T")) {
+    const instant = new Date(dateISO)
+    if (Number.isNaN(instant.getTime())) return null
+    date = tijuanaDate(instant)
+  }
+  const match = /^(\d{4})-(\d{2})/.exec(date)
+  if (!match) return null
+  const month = Number(match[2])
+  return month >= 1 && month <= 12 ? { year: Number(match[1]), month } : null
 }
 
 /** `"2026-03-14T…"` → `"2026-1"`. Returns `null` for unusable input. */
@@ -50,7 +57,9 @@ export function sortSemesters(semesters: Semester[]): Semester[] {
  * — a semester with zero events still deserves a column, otherwise the curve
  * lies about the shape of the year.
  */
-export function semesterRange(dates: Array<string | undefined | null>): Semester[] {
+export function semesterRange(
+  dates: Array<string | undefined | null>,
+): Semester[] {
   const present = dates
     .map((d) => semesterOf(d))
     .filter((s): s is Semester => s !== null)

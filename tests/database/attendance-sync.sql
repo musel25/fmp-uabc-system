@@ -25,4 +25,17 @@ DO $$ DECLARE payload jsonb; result jsonb; before_time timestamptz; BEGIN
  PERFORM pg_temp.send_snapshot(payload);
  IF EXISTS(SELECT 1 FROM public.attendance_responses) OR (SELECT response_count FROM public.attendance_sync_state LIMIT 1)<>0 THEN RAISE EXCEPTION 'Deletion not reconciled'; END IF;
 END $$;
+
+INSERT INTO public.events(id,name,phone,program,type,classification,modality,venue,start_date,end_date,has_cost,organizers,user_id) VALUES ('00000000-0000-4000-8000-000000000042','Sync B','1','Médico','Académico','Taller','Presencial','test',now()+interval '30 days',now()+interval '31 days',false,'Test','00000000-0000-4000-8000-000000000031');
+UPDATE public.events SET status='aprobado' WHERE id='00000000-0000-4000-8000-000000000042';
+DO $$ DECLARE a jsonb; b jsonb; BEGIN
+ a:=jsonb_build_object('version',1,'action','snapshot','sourceFormId','test-form','eventId','00000000-0000-4000-8000-000000000041','snapshotStartedAt',now()-interval '9 seconds','responses',jsonb_build_array(jsonb_build_object('sourceResponseId','moved','submittedAt',now()-interval '1 day','name','Test','email',null,'category',null)));
+ PERFORM pg_temp.send_snapshot(a);
+ b:=jsonb_set(jsonb_set(a,'{eventId}','"00000000-0000-4000-8000-000000000042"'),'{snapshotStartedAt}',to_jsonb(now()-interval '7 seconds'));
+ PERFORM pg_temp.send_snapshot(b);
+ IF (SELECT response_count FROM public.attendance_sync_state WHERE event_id='00000000-0000-4000-8000-000000000041')<>0 OR (SELECT event_id FROM public.attendance_responses WHERE source_response_id='moved')<>'00000000-0000-4000-8000-000000000042' THEN RAISE EXCEPTION 'Move not reconciled'; END IF;
+ PERFORM pg_temp.send_snapshot(jsonb_set(jsonb_set(b,'{responses}','[]'),'{snapshotStartedAt}',to_jsonb(now()-interval '5 seconds')));
+ BEGIN PERFORM pg_temp.send_snapshot(jsonb_set(a,'{snapshotStartedAt}',to_jsonb(now()-interval '8 seconds'))); RAISE EXCEPTION 'Deleted response resurrected'; EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.attendance_responses WHERE source_response_id='moved') THEN RAISE EXCEPTION 'Tombstone failed'; END IF;
+END $$;
 ROLLBACK;

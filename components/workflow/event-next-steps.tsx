@@ -2,8 +2,19 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { AlarmClock, ArrowRight, CheckCircle2, ExternalLink, Info, TriangleAlert } from "lucide-react"
-import { nextStepFor, type EventNextStep, type NextStepTone } from "@/lib/workflow"
+import {
+  AlarmClock,
+  ArrowRight,
+  CheckCircle2,
+  ExternalLink,
+  Info,
+  TriangleAlert,
+} from "lucide-react"
+import {
+  nextStepFor,
+  type EventNextStep,
+  type NextStepTone,
+} from "@/lib/workflow"
 import type { Event } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -64,13 +75,23 @@ export function EventNextSteps({
   return (
     <section className={cn("rounded-lg border p-4", tone.box, className)}>
       <div className="flex gap-3">
-        <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", tone.iconClass)} aria-hidden="true" />
+        <Icon
+          className={cn("mt-0.5 h-5 w-5 shrink-0", tone.iconClass)}
+          aria-hidden="true"
+        />
         <div className="min-w-0 flex-1">
           <p className="eyebrow text-current opacity-70">Qué sigue</p>
-          <h2 className={cn("mt-1 font-display text-base font-semibold", tone.title)}>
+          <h2
+            className={cn(
+              "mt-1 font-display text-base font-semibold",
+              tone.title,
+            )}
+          >
             {next.title}
           </h2>
-          <p className="mt-1.5 text-sm text-pretty text-foreground/90">{next.detail}</p>
+          <p className="mt-1.5 text-sm text-pretty text-foreground/90">
+            {next.detail}
+          </p>
 
           {next.deadline && (
             <p
@@ -94,7 +115,21 @@ export function EventNextSteps({
                   className={i === 0 ? "btn-primary" : "bg-card"}
                   asChild
                 >
-                  {action.kind === "internal" ? <Link href={action.href}>{action.label}</Link> : <a href={action.href} target="_blank" rel="noopener noreferrer">{action.label}<ExternalLink className="ml-1.5 h-3 w-3" aria-hidden="true" /></a>}
+                  {action.kind === "internal" ? (
+                    <Link href={action.href}>{action.label}</Link>
+                  ) : (
+                    <a
+                      href={action.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {action.label}
+                      <ExternalLink
+                        className="ml-1.5 h-3 w-3"
+                        aria-hidden="true"
+                      />
+                    </a>
+                  )}
                 </Button>
               ))}
             </div>

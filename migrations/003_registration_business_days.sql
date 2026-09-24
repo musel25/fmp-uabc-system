@@ -1,8 +1,9 @@
 BEGIN;
 CREATE OR REPLACE FUNCTION public.earliest_event_date(p_today date)
-RETURNS date LANGUAGE plpgsql IMMUTABLE SET search_path = '' AS $$
+RETURNS date LANGUAGE plpgsql IMMUTABLE STRICT SET search_path = '' AS $$
 DECLARE cursor_day date := p_today; counted integer := 0;
 BEGIN
+ IF NOT isfinite(p_today) THEN RAISE EXCEPTION 'Invalid registration date' USING ERRCODE='22023'; END IF;
  WHILE counted < 5 LOOP
   cursor_day := cursor_day + 1;
   IF extract(isodow FROM cursor_day) <= 5 THEN counted := counted + 1; END IF;

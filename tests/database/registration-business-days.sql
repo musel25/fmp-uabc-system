@@ -1,4 +1,9 @@
 BEGIN;
+SET LOCAL statement_timeout = '500ms';
+SET LOCAL ROLE anon;
+DO $$ BEGIN IF public.earliest_event_date(NULL) IS NOT NULL THEN RAISE EXCEPTION 'Null must return null'; END IF; END $$;
+DO $$ BEGIN BEGIN PERFORM public.earliest_event_date('infinity'); RAISE EXCEPTION 'Accepted infinite date'; EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END; END $$;
+RESET ROLE;
 DO $$ BEGIN
  IF public.earliest_event_date('2026-09-21') <> '2026-09-28' OR public.earliest_event_date('2026-09-25') <> '2026-10-02' OR public.earliest_event_date('2026-09-26') <> '2026-10-02' OR public.earliest_event_date('2026-03-06') <> '2026-03-13' THEN RAISE EXCEPTION 'Business day boundary failed'; END IF;
 END $$;

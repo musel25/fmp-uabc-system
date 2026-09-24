@@ -1,10 +1,84 @@
-'use client'
-import { useEffect,useState } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { ProtectedRoute } from '@/components/layout/protected-route'
-import { AppShell } from '@/components/layout/app-shell'
-import { Button } from '@/components/ui/button'
-import { getEventById } from '@/lib/supabase-database'
-import type { Event } from '@/lib/types'
-export default function AttendanceListPage(){const {id}=useParams<{id:string}>(),[event,setEvent]=useState<Event|null>(null),[error,setError]=useState('');useEffect(()=>{void getEventById(id).then(e=>{if(!e)throw new Error();setEvent(e)}).catch(()=>setError('No pudimos cargar este evento.'))},[id]);return <ProtectedRoute><AppShell><div className="mx-auto max-w-4xl space-y-5"><div className="no-print flex gap-4"><Link href={`/events/${id}`} className="text-primary underline">Volver al evento</Link><Button variant="outline" onClick={()=>window.print()} disabled={!event}>Imprimir lista</Button></div><h1 className="font-display text-2xl">Lista de asistencia</h1>{error?<p role="alert">{error}</p>:event?<><h2 className="text-xl">{event.name}</h2><p className="break-all text-sm">ID del evento: {event.id}</p><p className="text-sm">Categoría: docente, alumno o comunidad general. Una persona por fila.</p><table className="w-full border-collapse border text-sm"><thead><tr>{['No.','Nombre completo','Categoría','Firma'].map(h=><th className="border p-2 text-left" key={h}>{h}</th>)}</tr></thead><tbody>{Array.from({length:20},(_,i)=><tr key={i}><td className="w-10 border p-3">{i+1}</td><td className="w-2/5 border"/><td className="border"/><td className="border"/></tr>)}</tbody></table><p className="text-xs">Digitaliza la lista y comparte su enlace en el reporte final del evento.</p></>:<p>Cargando…</p>}</div></AppShell></ProtectedRoute>}
+"use client"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import Link from "next/link"
+import { ProtectedRoute } from "@/components/layout/protected-route"
+import { AppShell } from "@/components/layout/app-shell"
+import { Button } from "@/components/ui/button"
+import { getEventById } from "@/lib/supabase-database"
+import type { Event } from "@/lib/types"
+export default function AttendanceListPage() {
+  const { id } = useParams<{ id: string }>(),
+    [event, setEvent] = useState<Event | null>(null),
+    [error, setError] = useState("")
+  useEffect(() => {
+    void getEventById(id)
+      .then((e) => {
+        if (!e) throw new Error()
+        setEvent(e)
+      })
+      .catch(() => setError("No pudimos cargar este evento."))
+  }, [id])
+  return (
+    <ProtectedRoute>
+      <AppShell>
+        <div className="mx-auto max-w-4xl space-y-5">
+          <div className="no-print flex gap-4">
+            <Link href={`/events/${id}`} className="text-primary underline">
+              Volver al evento
+            </Link>
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              disabled={!event}
+            >
+              Imprimir lista
+            </Button>
+          </div>
+          <h1 className="font-display text-2xl">Lista de asistencia</h1>
+          {error ? (
+            <p role="alert">{error}</p>
+          ) : event ? (
+            <>
+              <h2 className="text-xl">{event.name}</h2>
+              <p className="break-all text-sm">ID del evento: {event.id}</p>
+              <p className="text-sm">
+                Categoría: docente, alumno o comunidad general. Una persona por
+                fila.
+              </p>
+              <table className="w-full border-collapse border text-sm">
+                <thead>
+                  <tr>
+                    {["No.", "Nombre completo", "Categoría", "Firma"].map(
+                      (h) => (
+                        <th className="border p-2 text-left" key={h}>
+                          {h}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <tr key={i}>
+                      <td className="w-10 border p-3">{i + 1}</td>
+                      <td className="w-2/5 border" />
+                      <td className="border" />
+                      <td className="border" />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs">
+                Digitaliza la lista y comparte su enlace en el reporte final del
+                evento.
+              </p>
+            </>
+          ) : (
+            <p>Cargando…</p>
+          )}
+        </div>
+      </AppShell>
+    </ProtectedRoute>
+  )
+}

@@ -15,13 +15,22 @@
 export type EventStatus = "en_revision" | "aprobado" | "rechazado"
 
 /** Academic program the event belongs to. */
-export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado" | "Otro"
+export type EventProgram =
+  | "Médico"
+  | "Psicología"
+  | "Nutrición"
+  | "Posgrado"
+  | "Otro"
 
 /** General nature of the activity. */
 export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"
 
 /** Format of the activity; "Otro" requires `classificationOther`. */
-export type EventClassification = "Conferencia" | "Seminario" | "Taller" | "Otro"
+export type EventClassification =
+  | "Conferencia"
+  | "Seminario"
+  | "Taller"
+  | "Otro"
 
 export type EventModality = "Presencial" | "En línea" | "Mixta"
 
@@ -102,7 +111,10 @@ export type CreateEventData = Omit<
 export type ReportStatus = "draft" | "submitted"
 export type ParticipationMode = "none" | "listed" | null
 export type AttendeeCategory = "docente" | "alumno" | "comunidad" | null
-export interface TeacherOrganizer { name: string; degree: string }
+export interface TeacherOrganizer {
+  name: string
+  degree: string
+}
 export interface StudentOrganizer {
   name: string
   level: "licenciatura" | "maestria" | "otro_posgrado"
@@ -161,7 +173,14 @@ export type EventProgress =
   | { state: "unavailable" }
   | {
       state: "loaded"
-      report: Pick<EventReport, "status" | "version" | "submittedAt" | "firstSubmittedAt" | "attendanceBasis"> | null
+      report: Pick<
+        EventReport,
+        | "status"
+        | "version"
+        | "submittedAt"
+        | "firstSubmittedAt"
+        | "attendanceBasis"
+      > | null
       preparation: PreparationValues
       attendance: AttendanceSummary
       tracking: "current" | "legacy"

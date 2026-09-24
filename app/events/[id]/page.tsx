@@ -40,9 +40,14 @@ export default function EventDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const [progress,setProgress]=useState<EventProgress>({state:"unavailable"})
-  const [isOwner,setIsOwner]=useState(false)
-  const refreshProgress=async()=>{const p=await getEventProgress([params.id as string]);setProgress(p[params.id as string])}
+  const [progress, setProgress] = useState<EventProgress>({
+    state: "unavailable",
+  })
+  const [isOwner, setIsOwner] = useState(false)
+  const refreshProgress = async () => {
+    const p = await getEventProgress([params.id as string])
+    setProgress(p[params.id as string])
+  }
   const [event, setEvent] = useState<Event | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -66,7 +71,8 @@ export default function EventDetailPage() {
         if (!found) {
           toast({
             title: "Ese evento no existe",
-            description: "Es posible que se haya eliminado o que el enlace esté mal.",
+            description:
+              "Es posible que se haya eliminado o que el enlace esté mal.",
             variant: "destructive",
           })
           router.push("/dashboard")
@@ -76,7 +82,8 @@ export default function EventDetailPage() {
         if (found.userId !== user.id && user.role !== "admin") {
           toast({
             title: "No puedes ver este evento",
-            description: "Sólo la persona que lo registró y la coordinación tienen acceso.",
+            description:
+              "Sólo la persona que lo registró y la coordinación tienen acceso.",
             variant: "destructive",
           })
           router.push("/dashboard")
@@ -84,9 +91,9 @@ export default function EventDetailPage() {
         }
 
         setEvent(found)
-        setIsOwner(found.userId===user.id)
-        const summaries=await getEventProgress([found.id])
-        if(mounted)setProgress(summaries[found.id])
+        setIsOwner(found.userId === user.id)
+        const summaries = await getEventProgress([found.id])
+        if (mounted) setProgress(summaries[found.id])
       } catch (err) {
         console.error("Load event error:", err)
         if (!mounted) return
@@ -107,8 +114,14 @@ export default function EventDetailPage() {
     }
   }, [params.id, router, toast])
 
-  const next = useMemo(() => (event ? nextStepFor(event, new Date(), progress) : null), [event, progress])
-  const deadline = useMemo(() => (event ? evidenceDeadline(event) : null), [event])
+  const next = useMemo(
+    () => (event ? nextStepFor(event, new Date(), progress) : null),
+    [event, progress],
+  )
+  const deadline = useMemo(
+    () => (event ? evidenceDeadline(event) : null),
+    [event],
+  )
 
   if (isLoading) {
     return (
@@ -143,10 +156,17 @@ export default function EventDetailPage() {
           <p className="text-[11pt] font-semibold">
             Extensión de la cultura y divulgación de la ciencia
           </p>
-          <p className="text-[9pt]">Registro de evento · {COORDINATION_EMAIL}</p>
+          <p className="text-[9pt]">
+            Registro de evento · {COORDINATION_EMAIL}
+          </p>
         </div>
 
-        <Button asChild variant="ghost" size="sm" className="no-print -ml-2 mb-4">
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="no-print -ml-2 mb-4"
+        >
           <Link href="/dashboard">
             <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
             Mis eventos
@@ -189,19 +209,32 @@ export default function EventDetailPage() {
 
         {next && <EventNextSteps event={event} step={next} className="mb-6" />}
 
-        <div className="no-print mb-6"><EventChecklist event={event} progress={progress} canEdit={isOwner} onChange={()=>void refreshProgress()}/></div>
+        <div className="no-print mb-6">
+          <EventChecklist
+            event={event}
+            progress={progress}
+            canEdit={isOwner}
+            onChange={() => void refreshProgress()}
+          />
+        </div>
         <ProcessRail activePhaseId={next?.phaseId} className="no-print mb-6" />
 
         <div className="print-flow grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <section className="card-uabc p-5">
-              <h2 className="font-display text-base font-semibold text-ink">Datos del evento</h2>
+              <h2 className="font-display text-base font-semibold text-ink">
+                Datos del evento
+              </h2>
               <dl className="mt-3">
                 <Field label="Inicio">
-                  <span className="font-data text-xs">{formatDateTime(event.startDate)}</span>
+                  <span className="font-data text-xs">
+                    {formatDateTime(event.startDate)}
+                  </span>
                 </Field>
                 <Field label="Fin">
-                  <span className="font-data text-xs">{formatDateTime(event.endDate)}</span>
+                  <span className="font-data text-xs">
+                    {formatDateTime(event.endDate)}
+                  </span>
                 </Field>
                 <Field label="Modalidad">{event.modality}</Field>
                 <Field label="Sede">
@@ -215,7 +248,9 @@ export default function EventDetailPage() {
                     : event.classification}
                 </Field>
                 <Field label="Costo">
-                  {event.hasCost ? "Con costo — contactar a educación continua" : "Sin costo"}
+                  {event.hasCost
+                    ? "Con costo — contactar a educación continua"
+                    : "Sin costo"}
                 </Field>
                 {event.isAuthorized !== null && (
                   <Field label="Autorización">
@@ -230,12 +265,17 @@ export default function EventDetailPage() {
                   </Field>
                 )}
                 {event.seaesCategories.length > 0 && (
-                  <Field label="Categorías SEAES">{event.seaesCategories.join("; ")}</Field>
+                  <Field label="Categorías SEAES">
+                    {event.seaesCategories.join("; ")}
+                  </Field>
                 )}
-                {(event.modality === "En línea" || event.modality === "Mixta") &&
+                {(event.modality === "En línea" ||
+                  event.modality === "Mixta") &&
                   event.onlineInfo && (
                     <Field label="Acceso en línea">
-                      <span className="whitespace-pre-wrap">{event.onlineInfo}</span>
+                      <span className="whitespace-pre-wrap">
+                        {event.onlineInfo}
+                      </span>
                     </Field>
                   )}
               </dl>
@@ -262,7 +302,11 @@ export default function EventDetailPage() {
             />
 
             {event.observations && (
-              <LongText title="Observaciones" body={event.observations} empty="" />
+              <LongText
+                title="Observaciones"
+                body={event.observations}
+                empty=""
+              />
             )}
 
             {event.status === "rechazado" && event.rejectionReason && (
@@ -289,23 +333,35 @@ export default function EventDetailPage() {
           </div>
 
           <aside className="space-y-6">
-            {event.status === "aprobado" && <AttendancePanel event={event} />}
-
+            {event.status === "aprobado" && (
+              <AttendancePanel
+                event={event}
+                onRefresh={() => void refreshProgress()}
+              />
+            )}
 
             <section className="card-uabc p-5">
-              <h2 className="font-display text-base font-semibold text-ink">Contacto</h2>
+              <h2 className="font-display text-base font-semibold text-ink">
+                Contacto
+              </h2>
               <dl className="mt-3">
                 <Field label="Correo" compact>
-                  <span className="font-data text-xs break-all">{event.email || "—"}</span>
+                  <span className="font-data text-xs break-all">
+                    {event.email || "—"}
+                  </span>
                 </Field>
                 <Field label="Teléfono" compact>
-                  <span className="font-data text-xs">{event.phone || "—"}</span>
+                  <span className="font-data text-xs">
+                    {event.phone || "—"}
+                  </span>
                 </Field>
               </dl>
             </section>
 
             <section className="card-uabc p-5">
-              <h2 className="font-display text-base font-semibold text-ink">Registro</h2>
+              <h2 className="font-display text-base font-semibold text-ink">
+                Registro
+              </h2>
               <dl className="mt-3">
                 <Field label="Creado" compact>
                   <span className="font-data text-xs">
@@ -342,7 +398,13 @@ function Field({
 }) {
   return (
     <div className="field-row">
-      <dt className={compact ? "shrink-0 text-sm font-medium text-muted-foreground sm:w-28" : "field-label"}>
+      <dt
+        className={
+          compact
+            ? "shrink-0 text-sm font-medium text-muted-foreground sm:w-28"
+            : "field-label"
+        }
+      >
         {label}
       </dt>
       <dd className="field-value">{children}</dd>
@@ -370,7 +432,9 @@ function LongText({
   return (
     <section className="sheet-uabc p-5 sm:p-6">
       <h2 className="font-display text-base font-semibold text-ink">{title}</h2>
-      {caption && <p className="mt-1 text-xs text-muted-foreground">{caption}</p>}
+      {caption && (
+        <p className="mt-1 text-xs text-muted-foreground">{caption}</p>
+      )}
       <div className="mt-3 max-w-[68ch]">
         {text ? (
           <p className="whitespace-pre-wrap text-[0.9375rem] leading-7 text-pretty text-foreground">
@@ -403,7 +467,10 @@ function LinkButton({
     >
       <span className="mr-2 shrink-0">{icon}</span>
       <span className="flex-1 text-sm">{label}</span>
-      <ExternalLink className="ml-2 h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
+      <ExternalLink
+        className="ml-2 h-3 w-3 shrink-0 opacity-70"
+        aria-hidden="true"
+      />
     </Button>
   )
 }

@@ -12,7 +12,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatCard } from "@/components/ui/stat-card"
 import { EventCard } from "@/components/events/event-card"
 import { ProcessRail } from "@/components/workflow/process-guide"
-import { CalendarPlus, CalendarX2, Loader2, Search, TriangleAlert } from "lucide-react"
+import {
+  CalendarPlus,
+  CalendarX2,
+  Loader2,
+  Search,
+  TriangleAlert,
+} from "lucide-react"
 import { getUserEvents } from "@/lib/supabase-database"
 import { getAuthUser } from "@/lib/supabase-auth"
 import { useToast } from "@/hooks/use-toast"
@@ -24,7 +30,7 @@ import type { Event, EventStatus, EventProgress } from "@/lib/types"
 type Tab = "todos" | "en_revision" | "aprobado" | "rechazado"
 
 export default function DashboardPage() {
-  const [progress,setProgress]=useState<Record<string,EventProgress>>({})
+  const [progress, setProgress] = useState<Record<string, EventProgress>>({})
   const [events, setEvents] = useState<Event[]>([])
   const [activeTab, setActiveTab] = useState<Tab>("todos")
   const [search, setSearch] = useState("")
@@ -49,8 +55,8 @@ export default function DashboardPage() {
 
         const userEvents = await getUserEvents(user.id)
         if (mounted) setEvents(userEvents)
-        const summaries=await getEventProgress(userEvents.map(e=>e.id))
-        if(mounted)setProgress(summaries)
+        const summaries = await getEventProgress(userEvents.map((e) => e.id))
+        if (mounted) setProgress(summaries)
       } catch (err) {
         console.error("Load events error:", err)
         if (!mounted) return
@@ -65,14 +71,20 @@ export default function DashboardPage() {
       }
     }
 
-    loadEvents()
+    void loadEvents()
+    const refresh = () => {
+      void loadEvents()
+    }
+    window.addEventListener("focus", refresh)
     return () => {
+      window.removeEventListener("focus", refresh)
       mounted = false
     }
   }, [router, toast])
 
   const counts = useMemo(() => {
-    const byStatus = (status: EventStatus) => events.filter((e) => e.status === status).length
+    const byStatus = (status: EventStatus) =>
+      events.filter((e) => e.status === status).length
     return {
       todos: events.length,
       en_revision: byStatus("en_revision"),
@@ -82,10 +94,16 @@ export default function DashboardPage() {
   }, [events])
 
   /** Eventos aprobados que ya terminaron y siguen sin evidencias en plazo. */
-  const pendingEvidence = useMemo(()=>{
-    const states=events.map(e=>isPendingReport(e,progress[e.id]??{state:'unavailable'},new Date()))
-    return states.some(s=>s===null)?null:states.filter(Boolean).length
-  },[events,progress])
+  const pendingEvidence = useMemo(() => {
+    const states = events.map((e) =>
+      isPendingReport(
+        e,
+        progress[e.id] ?? { state: "unavailable" },
+        new Date(),
+      ),
+    )
+    return states.some((s) => s === null) ? null : states.filter(Boolean).length
+  }, [events, progress])
 
   const filteredEvents = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -98,16 +116,22 @@ export default function DashboardPage() {
             e.program.toLowerCase().includes(term)
           : true,
       )
-      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      )
   }, [events, activeTab, search])
 
   /** Fase del proceso a resaltar en la ruta: la del evento más urgente. */
   const activePhaseId = useMemo(() => {
     if (events.length === 0) return "autorizacion"
-    const urgent = events.find((e) => nextStepFor(e,new Date(),progress[e.id]).tone === "urgent")
-    const target = urgent ?? events.find((e) => e.status === "aprobado") ?? events[0]
-    return nextStepFor(target,new Date(),progress[target.id]).phaseId
-  }, [events,progress])
+    const urgent = events.find(
+      (e) => nextStepFor(e, new Date(), progress[e.id]).tone === "urgent",
+    )
+    const target =
+      urgent ?? events.find((e) => e.status === "aprobado") ?? events[0]
+    return nextStepFor(target, new Date(), progress[target.id]).phaseId
+  }, [events, progress])
 
   return (
     <ProtectedRoute>
@@ -137,12 +161,16 @@ export default function DashboardPage() {
           <StatCard label="Aprobados" value={counts.aprobado} tone="approved" />
           <StatCard
             label="Evidencias pendientes"
-            value={pendingEvidence ?? "—"}
+            value={isLoading || error ? "—" : (pendingEvidence ?? "—")}
             tone={(pendingEvidence ?? 0) > 0 ? "pending" : "neutral"}
-            caption={pendingEvidence === null ? "Seguimiento no disponible" :
-              (pendingEvidence ?? 0) > 0
-                ? "Eventos ya realizados sin evidencias"
-                : "Nada pendiente por entregar"
+            caption={
+              isLoading
+                ? "Consultando…"
+                : error || pendingEvidence === null
+                  ? "Seguimiento no disponible"
+                  : (pendingEvidence ?? 0) > 0
+                    ? "Eventos ya realizados sin evidencias"
+                    : "Nada pendiente por entregar"
             }
           />
         </div>
@@ -151,12 +179,21 @@ export default function DashboardPage() {
 
         <div className="mt-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as Tab)}
+            >
               <TabsList>
                 <TabsTrigger value="todos">Todos ({counts.todos})</TabsTrigger>
-                <TabsTrigger value="en_revision">En revisión ({counts.en_revision})</TabsTrigger>
-                <TabsTrigger value="aprobado">Aprobados ({counts.aprobado})</TabsTrigger>
-                <TabsTrigger value="rechazado">Rechazados ({counts.rechazado})</TabsTrigger>
+                <TabsTrigger value="en_revision">
+                  En revisión ({counts.en_revision})
+                </TabsTrigger>
+                <TabsTrigger value="aprobado">
+                  Aprobados ({counts.aprobado})
+                </TabsTrigger>
+                <TabsTrigger value="rechazado">
+                  Rechazados ({counts.rechazado})
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -179,8 +216,13 @@ export default function DashboardPage() {
           <div className="mt-5">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
-                <p className="mt-3 text-sm text-muted-foreground">Cargando tus eventos…</p>
+                <Loader2
+                  className="h-6 w-6 animate-spin text-primary"
+                  aria-hidden="true"
+                />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Cargando tus eventos…
+                </p>
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] py-16 text-center">
@@ -188,9 +230,12 @@ export default function DashboardPage() {
                   className="h-6 w-6 text-[var(--state-rejected)]"
                   aria-hidden="true"
                 />
-                <h2 className="mt-3 font-display text-base font-semibold text-ink">{error}</h2>
+                <h2 className="mt-3 font-display text-base font-semibold text-ink">
+                  {error}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  El servidor no respondió. Vuelve a cargar la página para reintentar.
+                  El servidor no respondió. Vuelve a cargar la página para
+                  reintentar.
                 </p>
                 <Button
                   variant="outline"
@@ -209,7 +254,11 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredEvents.map((event) => (
-                  <EventCard key={event.id} event={event} progress={progress[event.id]} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    progress={progress[event.id]}
+                  />
                 ))}
               </div>
             )}
@@ -239,7 +288,11 @@ function EmptyState({
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
           Prueba con otro nombre, sede o programa.
         </p>
-        <Button variant="outline" className="mt-4 bg-card" onClick={onClearSearch}>
+        <Button
+          variant="outline"
+          className="mt-4 bg-card"
+          onClick={onClearSearch}
+        >
           Limpiar búsqueda
         </Button>
       </div>
@@ -249,7 +302,7 @@ function EmptyState({
   const copy: Record<Tab, { title: string; body: string }> = {
     todos: {
       title: "Aún no registras ningún evento",
-      body: "Registra tu primera actividad para comenzar el trámite. Necesitas la autorización de dirección o subdirección y al menos tres semanas de anticipación.",
+      body: "Registra tu primera actividad para comenzar el trámite. Necesitas la autorización de dirección o subdirección y al menos cinco días hábiles de anticipación.",
     },
     en_revision: {
       title: "No tienes eventos en revisión",
@@ -269,9 +322,16 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
-      <CalendarX2 className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
-      <h2 className="mt-3 font-display text-base font-semibold text-ink">{title}</h2>
-      <p className="mt-1.5 max-w-md text-sm text-pretty text-muted-foreground">{body}</p>
+      <CalendarX2
+        className="h-7 w-7 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <h2 className="mt-3 font-display text-base font-semibold text-ink">
+        {title}
+      </h2>
+      <p className="mt-1.5 max-w-md text-sm text-pretty text-muted-foreground">
+        {body}
+      </p>
       {tab === "todos" && (
         <Button asChild className="btn-primary mt-5">
           <Link href="/events/new">

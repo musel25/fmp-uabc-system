@@ -41,6 +41,13 @@ DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM public.event_reports) THEN RAISE EXCEPTION 'RLS leaked report'; END IF;
  BEGIN PERFORM public.save_event_report('00000000-0000-4000-8000-000000000021','{}','draft',0); RAISE EXCEPTION 'other owner write'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
+RESET ROLE;
+UPDATE public.profiles SET role='admin' WHERE id='00000000-0000-4000-8000-000000000012';
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.event_reports) THEN RAISE EXCEPTION 'Admin cannot read report'; END IF;
+ BEGIN PERFORM public.save_event_report('00000000-0000-4000-8000-000000000021','{}','draft',0); RAISE EXCEPTION 'Admin impersonated owner'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
 SET LOCAL ROLE anon;
 DO $$ BEGIN
  BEGIN PERFORM public.save_event_report('00000000-0000-4000-8000-000000000021','{}','draft',0); RAISE EXCEPTION 'anon write'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;

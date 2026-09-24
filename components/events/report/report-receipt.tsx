@@ -1,9 +1,120 @@
-'use client'
-import { Button } from '@/components/ui/button'
-import { formatDateTime } from '@/lib/workflow'
-import { createCsv,downloadCsv } from '@/lib/csv'
-import { reportCsvRows } from '@/lib/report-analytics'
-import type { Event,EventReport } from '@/lib/types'
-export function ReportReceipt({report,event,onEdit}:{report:EventReport;event:Event;onEdit?:()=>void}){
- return <section className="card-uabc space-y-5 p-6"><div><p className="text-sm text-primary">Reporte recibido</p><h2 className="font-display text-2xl">{report.eventName}</h2><p className="mt-2 text-sm">Entrega: {formatDateTime(report.firstSubmittedAt!)}{report.version>1&&<> · Última actualización: {formatDateTime(report.submittedAt!)}</>}</p></div><dl className="grid gap-4 sm:grid-cols-3">{[['Docentes',report.teacherCount],['Alumnos',report.studentCount],['Comunidad',report.communityCount]].map(([label,value])=><div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="font-display text-2xl">{value}</dd></div>)}</dl><p>Total: <strong>{(report.teacherCount??0)+(report.studentCount??0)+(report.communityCount??0)}</strong> asistentes reportados</p><p className="whitespace-pre-wrap text-sm leading-7">{report.narrative}</p><div className="text-sm"><p>Docentes organizadores: {report.teachers.map(p=>`${p.degree} ${p.name}`).join('; ')||'No participaron'}</p><p>Estudiantes organizadores: {report.students.map(p=>`${p.name} (${p.level})`).join('; ')||'No participaron'}</p><p>Correo: {report.email}</p></div>{report.attendanceBasis==='google'?<p className="text-sm">Lista exenta: {report.verifiedResponseCount} respuestas verificadas al enviar.</p>:<a className="text-primary underline" href={report.attendanceListUrl} target="_blank" rel="noopener noreferrer">Abrir lista de asistencia</a>}<div className="flex flex-wrap gap-3">{report.photoUrls.map((url,i)=><a className="text-primary underline" href={url} key={url} target="_blank" rel="noopener noreferrer">Fotografías {i+1}</a>)}</div><p className="text-sm text-muted-foreground">La recepción del reporte no significa que las constancias estén emitidas.</p><div className="no-print flex gap-3"><Button variant="outline" onClick={()=>downloadCsv(createCsv(reportCsvRows([{event,report,progress:{state:"unavailable"}}])),`reporte-${event.id}.csv`)}>Descargar reporte CSV</Button><Button variant="outline" onClick={()=>window.print()}>Imprimir / guardar PDF</Button>{onEdit&&<Button onClick={onEdit}>Corregir reporte</Button>}</div></section>
+"use client"
+import { Button } from "@/components/ui/button"
+import { formatDateTime } from "@/lib/workflow"
+import { createCsv, downloadCsv } from "@/lib/csv"
+import { reportCsvRows } from "@/lib/report-analytics"
+import type { Event, EventReport } from "@/lib/types"
+export function ReportReceipt({
+  report,
+  event,
+  onEdit,
+}: {
+  report: EventReport
+  event: Event
+  onEdit?: () => void
+}) {
+  return (
+    <section className="card-uabc space-y-5 p-6">
+      <div>
+        <p className="text-sm text-primary">Reporte recibido</p>
+        <h2 className="font-display text-2xl">{report.eventName}</h2>
+        <p className="mt-2 text-sm">
+          Entrega: {formatDateTime(report.firstSubmittedAt!)}
+          {report.version > 1 && (
+            <> · Última actualización: {formatDateTime(report.submittedAt!)}</>
+          )}
+        </p>
+      </div>
+      <dl className="grid gap-4 sm:grid-cols-3">
+        {[
+          ["Docentes", report.teacherCount],
+          ["Alumnos", report.studentCount],
+          ["Comunidad", report.communityCount],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-sm text-muted-foreground">{label}</dt>
+            <dd className="font-display text-2xl">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p>
+        Total:{" "}
+        <strong>
+          {(report.teacherCount ?? 0) +
+            (report.studentCount ?? 0) +
+            (report.communityCount ?? 0)}
+        </strong>{" "}
+        asistentes reportados
+      </p>
+      <p className="whitespace-pre-wrap text-sm leading-7">
+        {report.narrative}
+      </p>
+      <div className="text-sm">
+        <p>
+          Docentes organizadores:{" "}
+          {report.teachers.map((p) => `${p.degree} ${p.name}`).join("; ") ||
+            "No participaron"}
+        </p>
+        <p>
+          Estudiantes organizadores:{" "}
+          {report.students.map((p) => `${p.name} (${p.level})`).join("; ") ||
+            "No participaron"}
+        </p>
+        <p>Correo: {report.email}</p>
+      </div>
+      {report.attendanceBasis === "google" ? (
+        <p className="text-sm">
+          Lista exenta: {report.verifiedResponseCount} respuestas verificadas al
+          enviar.
+        </p>
+      ) : (
+        <a
+          className="text-primary underline"
+          href={report.attendanceListUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir lista de asistencia
+        </a>
+      )}
+      <div className="flex flex-wrap gap-3">
+        {report.photoUrls.map((url, i) => (
+          <a
+            className="text-primary underline"
+            href={url}
+            key={url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fotografías {i + 1}
+          </a>
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        La recepción del reporte no significa que las constancias estén
+        emitidas.
+      </p>
+      <div className="no-print flex gap-3">
+        <Button
+          variant="outline"
+          onClick={() =>
+            downloadCsv(
+              createCsv(
+                reportCsvRows([
+                  { event, report, progress: { state: "unavailable" } },
+                ]),
+              ),
+              `reporte-${event.id}.csv`,
+            )
+          }
+        >
+          Descargar reporte CSV
+        </Button>
+        <Button variant="outline" onClick={() => window.print()}>
+          Imprimir / guardar PDF
+        </Button>
+        {onEdit && <Button onClick={onEdit}>Corregir reporte</Button>}
+      </div>
+    </section>
+  )
 }

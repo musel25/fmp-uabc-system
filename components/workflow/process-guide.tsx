@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
  * "Ruta del evento" — el trámite completo, numerado.
  *
  * La numeración aquí no es decorativa: el proceso es una secuencia real con
- * dos plazos duros (21 días antes de iniciar, 21 días después de terminar), y
+ * dos plazos duros (5 días hábiles antes de iniciar, 21 días después de terminar), y
  * el orden es justamente lo que la gente pierde de vista.
  */
 
@@ -46,16 +46,18 @@ function PhaseCard({
 
       <div className={cn("pb-8", active && "rounded-lg")}>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h3 className="font-display text-base font-semibold text-ink">{phase.title}</h3>
+          <h3 className="font-display text-base font-semibold text-ink">
+            {phase.title}
+          </h3>
           <span className="font-data rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] text-muted-foreground">
             {phase.when}
           </span>
-          {active && (
-            <span className="chip chip-revision">Estás aquí</span>
-          )}
+          {active && <span className="chip chip-revision">Estás aquí</span>}
         </div>
 
-        <p className="mt-1.5 text-sm text-pretty text-muted-foreground">{phase.summary}</p>
+        <p className="mt-1.5 text-sm text-pretty text-muted-foreground">
+          {phase.summary}
+        </p>
 
         <ul className="mt-3 space-y-2">
           {phase.tasks.map((task, i) => (
@@ -87,7 +89,10 @@ function PhaseCard({
 
         {phase.deadline && (
           <p className="mt-3 inline-flex items-start gap-2 rounded-md border border-[var(--state-pending-line)] bg-[var(--state-pending-bg)] px-3 py-2 text-xs text-[var(--state-pending)]">
-            <AlarmClock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <AlarmClock
+              className="mt-px h-3.5 w-3.5 shrink-0"
+              aria-hidden="true"
+            />
             <span>
               <span className="font-semibold">Plazo:</span> {phase.deadline}
             </span>
@@ -107,7 +112,11 @@ export function ProcessGuide({ activePhaseId }: { activePhaseId?: string }) {
         aria-hidden="true"
       />
       {WORKFLOW_PHASES.map((phase) => (
-        <PhaseCard key={phase.id} phase={phase} active={phase.id === activePhaseId} />
+        <PhaseCard
+          key={phase.id}
+          phase={phase}
+          active={phase.id === activePhaseId}
+        />
       ))}
     </ol>
   )
@@ -131,7 +140,9 @@ export function ProcessRail({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-2/60 px-4 py-3">
         <div className="flex items-center gap-2">
           <Route className="h-4 w-4 text-primary" aria-hidden="true" />
-          <h2 className="font-display text-sm font-semibold text-ink">Ruta del evento</h2>
+          <h2 className="font-display text-sm font-semibold text-ink">
+            Ruta del evento
+          </h2>
         </div>
         <ProcessGuideDialog
           open={open}
@@ -201,9 +212,12 @@ export function ProcessGuideDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto sm:max-w-2xl">
         <DialogHeader className="mb-6 text-left">
-          <DialogTitle className="font-display text-xl">Ruta del evento</DialogTitle>
+          <DialogTitle className="font-display text-xl">
+            Ruta del evento
+          </DialogTitle>
           <DialogDescription>
-            Las seis etapas del trámite, del permiso interno a la entrega de constancias.
+            Las seis etapas del trámite, del permiso interno a la entrega de
+            constancias.
           </DialogDescription>
         </DialogHeader>
         <ProcessGuide activePhaseId={activePhaseId} />
