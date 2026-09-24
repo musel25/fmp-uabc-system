@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ExternalLink, AlarmClock, Route } from "lucide-react"
-import { WORKFLOW_PHASES, type WorkflowPhase } from "@/lib/workflow"
+import { WORKFLOW_LINKS, WORKFLOW_PHASES, type WorkflowPhase } from "@/lib/workflow"
 import { cn } from "@/lib/utils"
 
 /**
@@ -68,6 +69,27 @@ function PhaseCard({
               />
               <span className="text-pretty">
                 {task.text}
+                {phase.id === "durante" && i === 0 && (
+                  <span className="mt-3 block">
+                    <a
+                      href={WORKFLOW_LINKS.registroAsistencia}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block rounded-md border bg-white p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    >
+                      <Image
+                        src="/qr-asistencia-participantes.svg"
+                        width={128}
+                        height={128}
+                        alt="QR para abrir el registro de asistencia de participantes"
+                        unoptimized
+                      />
+                    </a>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Para participantes. Comparte también el ID de tu evento.
+                    </span>
+                  </span>
+                )}
                 {task.link && (
                   <>
                     {" "}

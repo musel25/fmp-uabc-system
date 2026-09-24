@@ -145,7 +145,7 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
       "Reúne lo que después se te pedirá como evidencia. Usa el registro de participantes o conserva una lista alternativa.",
     tasks: [
       {
-        text: "Comparte el QR del evento con los participantes; cada persona registra su asistencia.",
+        text: "Comparte este QR con los participantes; cada persona registra su asistencia.",
       },
       { text: "Toma fotografías del evento." },
       {
