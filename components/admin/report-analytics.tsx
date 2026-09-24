@@ -20,14 +20,14 @@ import {
   reportCsvRows,
   type ReportAnalyticsRow,
 } from "@/lib/report-analytics"
-import { semesterOf } from "@/lib/semester"
+import { currentSemester, semesterOf } from "@/lib/semester"
 import { createCsv, downloadCsv } from "@/lib/csv"
 import type { Event } from "@/lib/types"
 export function ReportAnalytics() {
   const [rows, setRows] = useState<ReportAnalyticsRow[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [semester, setSemester] = useState(""),
+    [semester, setSemester] = useState(() => currentSemester()),
     [program, setProgram] = useState(""),
     [eventId, setEventId] = useState(""),
     [reload, setReload] = useState(0)
@@ -66,11 +66,12 @@ export function ReportAnalytics() {
     [filtered],
   )
   const semesters = Array.from(
-    new Set(
-      rows
+    new Set([
+      currentSemester(),
+      ...rows
         .map((r) => semesterOf(r.event.startDate))
         .filter((s): s is string => !!s),
-    ),
+    ]),
   )
     .sort()
     .reverse()
@@ -116,10 +117,14 @@ export function ReportAnalytics() {
           participar en varios eventos; las respuestas de Google se muestran por
           separado.
         </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          El semestre corresponde a la fecha del evento, aunque el reporte se
+          entregue después. Al abrir esta vista se selecciona el semestre actual.
+        </p>
       </header>
       <div className="no-print grid gap-4 sm:grid-cols-3">
         {[
-          ["Semestre", semester, setSemester, semesters.map((s) => [s, s])],
+          ["Semestre del evento", semester, setSemester, semesters.map((s) => [s, s])],
           [
             "Programa",
             program,

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
-import { summarizeReports } from "@/lib/report-analytics"
-import { semesterOf } from "@/lib/semester"
+import { summarizeReports, filterReportRows, reportCsvRows } from "@/lib/report-analytics"
+import { semesterOf, currentSemester } from "@/lib/semester"
 import { emptyReportValues } from "@/lib/event-report"
 import { event, progress } from "./fixtures"
 import type { EventReport } from "@/lib/types"
@@ -48,4 +48,19 @@ it("does not truncate large results", () => {
     progress: { ...progress, report },
   }))
   expect(summarizeReports(rows, new Date()).totalAttendance).toBe(7206)
+})
+
+it("defaults to the current Tijuana semester and rolls over in January", () => {
+ expect(currentSemester(new Date("2026-09-24T04:00:00Z"))).toBe("2026-2")
+ expect(currentSemester(new Date("2027-01-01T07:59:59Z"))).toBe("2026-2")
+ expect(currentSemester(new Date("2027-01-01T08:00:00Z"))).toBe("2027-1")
+})
+it("keeps late reports in the event semester for totals and exports", () => {
+ const rows=[{event,report,progress},{event:{...event,id:"prior",startDate:"2026-05-01T18:00:00Z"},report:{...report,eventId:"prior"},progress}]
+ const filtered=filterReportRows(rows,{semester:"2026-2"})
+ expect(filtered.map(r=>r.event.id)).toEqual([event.id])
+ expect(summarizeReports(filtered,new Date()).totalAttendance).toBe(6)
+ expect(reportCsvRows(filtered)).toHaveLength(2)
+ expect(reportCsvRows(filtered)[1][2]).toBe("2026-2")
+ expect(filterReportRows(rows,{})).toHaveLength(2)
 })
