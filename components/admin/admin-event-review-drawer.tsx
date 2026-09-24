@@ -90,6 +90,7 @@ export function AdminEventReviewDrawer({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-5">
+          {event.status === "aprobado" && <Link className="mb-4 block text-primary underline" href={`/events/${event.id}/report`}>Consultar reporte final</Link>}
           <Section title="Datos del evento">
             <Field label="Inicio">
               <span className="font-data text-xs">{formatDateTime(event.startDate)}</span>

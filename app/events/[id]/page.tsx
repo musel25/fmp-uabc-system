@@ -286,6 +286,7 @@ export default function EventDetailPage() {
                   Formularios institucionales. Se abren en una pestaña nueva.
                 </p>
                 <div className="mt-4 space-y-2">
+                  <Button asChild className="w-full"><Link href={`/events/${event.id}/report`}>Completar / consultar reporte final</Link></Button>
                   <LinkButton
                     href={WORKFLOW_LINKS.reservarEspacio}
                     icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
