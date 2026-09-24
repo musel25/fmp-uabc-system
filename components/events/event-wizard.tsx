@@ -13,8 +13,14 @@ import { EventDataStep } from "./wizard-steps/event-data-step"
 import { EventFilesStep } from "./wizard-steps/event-files-step"
 import { EventReviewStep } from "./wizard-steps/event-review-step"
 import type { CreateEventData } from "@/lib/types"
-import { MIN_LEAD_DAYS } from "@/lib/workflow"
-import { wizardValuesToCreateData, type EventWizardValues } from "@/lib/event-form"
+import {
+  MIN_LEAD_BUSINESS_DAYS,
+  meetsRegistrationLead,
+} from "@/lib/business-days"
+import {
+  wizardValuesToCreateData,
+  type EventWizardValues,
+} from "@/lib/event-form"
 import { tijuanaLocalToUTC } from "@/lib/timezone"
 import { cn } from "@/lib/utils"
 
@@ -44,14 +50,19 @@ const eventSchema = z
     organizers: z.string().min(1, "Los organizadores son requeridos"),
     observations: z.string().optional(),
     programDetails: z.string().min(1, "La descripción del evento es requerida"),
-    speakerCvs: z.string().min(1, "La semblanza curricular de ponentes es requerida"),
+    speakerCvs: z
+      .string()
+      .min(1, "La semblanza curricular de ponentes es requerida"),
     // Preguntas de opción: "" significa "sin contestar" y no pasa la validación
     isAuthorized: z
       .enum(["", "si", "no"])
       .refine((v) => v !== "", "Indica si el evento ya fue autorizado"),
     userType: z
       .enum(["", "interno", "externo"])
-      .refine((v) => v !== "", "Indica si eres usuario interno o externo a UABC"),
+      .refine(
+        (v) => v !== "",
+        "Indica si eres usuario interno o externo a UABC",
+      ),
     seaesCategories: z.array(z.string()),
   })
   .refine(
@@ -64,11 +75,10 @@ const eventSchema = z
   )
   .refine(
     (data) => {
-      const diffMs = new Date(data.startDate).getTime() - Date.now()
-      return diffMs >= MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+      return meetsRegistrationLead(data.startDate, new Date())
     },
     {
-      message: `Reagendar: no se cumple con el tiempo requerido (mínimo ${MIN_LEAD_DAYS} días de anticipación)`,
+      message: `Reagendar: no se cumple con el tiempo requerido (mínimo ${MIN_LEAD_BUSINESS_DAYS} días hábiles de anticipación)`,
       path: ["startDate"],
     },
   )
@@ -110,8 +120,16 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   })
 
   const steps = [
-    { number: 1, title: "Datos del evento", description: "Fechas, sede y clasificación" },
-    { number: 2, title: "Programa y ponentes", description: "Descripción y semblanzas" },
+    {
+      number: 1,
+      title: "Datos del evento",
+      description: "Fechas, sede y clasificación",
+    },
+    {
+      number: 2,
+      title: "Programa y ponentes",
+      description: "Descripción y semblanzas",
+    },
     { number: 3, title: "Revisión", description: "Confirmar y enviar" },
   ]
 
@@ -120,14 +138,14 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
     if (currentStep !== 1) return null
     if (!form.watch("isAuthorized"))
       return "Indica si dirección o subdirección ya autorizó este evento."
-    if (!form.watch("userType")) return "Indica si eres usuario interno o externo a UABC."
+    if (!form.watch("userType"))
+      return "Indica si eres usuario interno o externo a UABC."
     if (form.watch("hasCost"))
       return "Los eventos con costo se gestionan con el responsable de educación continua antes de registrarse aquí."
     const startDate = form.watch("startDate")
     if (!startDate) return "Indica la fecha y hora de inicio."
-    const diffMs = new Date(startDate).getTime() - Date.now()
-    if (diffMs < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000)
-      return `La fecha de inicio debe estar al menos ${MIN_LEAD_DAYS} días después de hoy.`
+    if (!meetsRegistrationLead(startDate, new Date()))
+      return `La fecha de inicio debe estar al menos ${MIN_LEAD_BUSINESS_DAYS} días hábiles después de hoy.`
     return null
   })()
 
@@ -161,6 +179,7 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
+      if (!(await form.trigger())) return
       const values = form.getValues()
       const data = wizardValuesToCreateData({
         ...values,
@@ -211,27 +230,43 @@ export function EventWizard({ onSubmit, initialData }: EventWizardProps) {
                   )}
                   aria-current={active ? "step" : undefined}
                 >
-                  {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step.number}
+                  {done ? (
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    step.number
+                  )}
                 </span>
                 <div className="min-w-0">
                   <p
                     className={cn(
                       "text-sm font-medium",
-                      active ? "text-ink" : done ? "text-foreground" : "text-muted-foreground",
+                      active
+                        ? "text-ink"
+                        : done
+                          ? "text-foreground"
+                          : "text-muted-foreground",
                     )}
                   >
                     {step.title}
                   </p>
-                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {step.description}
+                  </p>
                 </div>
                 {index < steps.length - 1 && (
-                  <span className="mt-4 hidden h-px flex-1 bg-border sm:block" aria-hidden="true" />
+                  <span
+                    className="mt-4 hidden h-px flex-1 bg-border sm:block"
+                    aria-hidden="true"
+                  />
                 )}
               </li>
             )
           })}
         </ol>
-        <Progress value={(currentStep / steps.length) * 100} className="mt-5 h-1.5" />
+        <Progress
+          value={(currentStep / steps.length) * 100}
+          className="mt-5 h-1.5"
+        />
       </div>
 
       {/* Contenido del paso */}

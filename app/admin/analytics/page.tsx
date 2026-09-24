@@ -1,5 +1,6 @@
 "use client"
 
+import { ReportAnalytics } from "@/components/admin/report-analytics"
 import { useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
@@ -13,7 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   ChartFrame,
   SERIES,
@@ -35,7 +43,13 @@ import { getAllEvents } from "@/lib/supabase-admin"
 import { semesterLabel, semesterOf, semesterRange } from "@/lib/semester"
 import type { Event, EventModality, EventProgram, EventType } from "@/lib/types"
 
-const PROGRAMS: EventProgram[] = ["Médico", "Psicología", "Nutrición", "Posgrado", "Otro"]
+const PROGRAMS: EventProgram[] = [
+  "Médico",
+  "Psicología",
+  "Nutrición",
+  "Posgrado",
+  "Otro",
+]
 const TYPES: EventType[] = ["Académico", "Cultural", "Deportivo", "Salud"]
 const MODALITIES: EventModality[] = ["Presencial", "En línea", "Mixta"]
 const STATUS_KEYS = ["Aprobados", "En revisión", "Rechazados"] as const
@@ -77,6 +91,9 @@ function tally<T extends string>(
 }
 
 export default function AdminAnalyticsPage() {
+  const [analyticsTab, setAnalyticsTab] = useState<"requests" | "results">(
+    "results",
+  )
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,12 +127,16 @@ export default function AdminAnalyticsPage() {
   )
 
   const scoped = useMemo(
-    () => (scope === ALL ? events : events.filter((e) => semesterOf(e.startDate) === scope)),
+    () =>
+      scope === ALL
+        ? events
+        : events.filter((e) => semesterOf(e.startDate) === scope),
     [events, scope],
   )
 
   const stats = useMemo(() => {
-    const by = (status: string) => scoped.filter((e) => e.status === status).length
+    const by = (status: string) =>
+      scoped.filter((e) => e.status === status).length
     return {
       total: scoped.length,
       aprobado: by("aprobado"),
@@ -137,12 +158,18 @@ export default function AdminAnalyticsPage() {
   )
 
   const programBySemester = useMemo(
-    () => tally(events, semesters, PROGRAMS, (e) => (PROGRAMS.includes(e.program) ? e.program : null)),
+    () =>
+      tally(events, semesters, PROGRAMS, (e) =>
+        PROGRAMS.includes(e.program) ? e.program : null,
+      ),
     [events, semesters],
   )
 
   const typeBySemester = useMemo(
-    () => tally(events, semesters, TYPES, (e) => (TYPES.includes(e.type) ? e.type : null)),
+    () =>
+      tally(events, semesters, TYPES, (e) =>
+        TYPES.includes(e.type) ? e.type : null,
+      ),
     [events, semesters],
   )
 
@@ -157,7 +184,9 @@ export default function AdminAnalyticsPage() {
   const curve = useMemo(
     () =>
       semesters.map((semester) => {
-        const inSemester = events.filter((e) => semesterOf(e.startDate) === semester)
+        const inSemester = events.filter(
+          (e) => semesterOf(e.startDate) === semester,
+        )
         return {
           semester,
           Registrados: inSemester.length,
@@ -248,164 +277,247 @@ export default function AdminAnalyticsPage() {
   return (
     <ProtectedRoute requireAdmin>
       <AppShell showAdminToggle>
-        <PageHeader
-          eyebrow="Administración"
-          title="Panel de analíticas"
-          description="Todo se agrupa por ciclo escolar UABC: 2026-1 abarca enero a junio y 2026-2 de julio a diciembre."
-          actions={
-            <>
-              <Button variant="outline" onClick={() => setShowTable((v) => !v)}>
-                {showTable ? (
-                  <BarChart3 className="mr-2 h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Table2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                )}
-                {showTable ? "Ver gráficas" : "Ver tabla"}
-              </Button>
-              <Button variant="outline" onClick={exportSemesterCSV}>
-                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                Resumen por ciclo
-              </Button>
-              <Button className="btn-primary" onClick={exportDetailCSV}>
-                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                Detalle de eventos
-              </Button>
-            </>
-          }
-        />
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-24">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
-            <p className="mt-3 text-sm text-muted-foreground">Cargando datos…</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] py-20 text-center">
-            <TriangleAlert className="h-6 w-6 text-[var(--state-rejected)]" aria-hidden="true" />
-            <h2 className="mt-3 font-display text-base font-semibold text-ink">{error}</h2>
-            <Button
-              variant="outline"
-              className="mt-4 bg-card"
-              onClick={() => window.location.reload()}
-            >
-              Volver a cargar
-            </Button>
-          </div>
-        ) : semesters.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
-            <BarChart3 className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
-            <h2 className="mt-3 font-display text-base font-semibold text-ink">
-              Todavía no hay eventos que analizar
-            </h2>
-            <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-              En cuanto se registre el primer evento aparecerán aquí los totales por ciclo escolar.
-            </p>
-          </div>
+        <div className="no-print mb-6 flex gap-2">
+          <Button
+            variant={analyticsTab === "results" ? "default" : "outline"}
+            onClick={() => setAnalyticsTab("results")}
+          >
+            Resultados de eventos
+          </Button>
+          <Button
+            variant={analyticsTab === "requests" ? "default" : "outline"}
+            onClick={() => setAnalyticsTab("requests")}
+          >
+            Solicitudes
+          </Button>
+        </div>
+        {analyticsTab === "results" ? (
+          <ReportAnalytics />
         ) : (
-          <div className="space-y-6">
-            {/* Resumen — el selector alcanza sólo a estas cifras; las gráficas
-                muestran siempre la serie completa de ciclos. */}
-            <section>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="font-display text-lg font-semibold text-ink">{scopeHeading}</h2>
-                <div className="flex items-center gap-2">
-                  <label htmlFor="scope" className="text-sm text-muted-foreground">
-                    Ciclo escolar
-                  </label>
-                  <Select value={scope} onValueChange={setScope}>
-                    <SelectTrigger id="scope" className="w-44 bg-card">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL}>Todos los ciclos</SelectItem>
-                      {[...semesters].reverse().map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s} · {semesterLabel(s)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <>
+            <PageHeader
+              eyebrow="Administración"
+              title="Panel de analíticas"
+              description="Todo se agrupa por ciclo escolar UABC: 2026-1 abarca enero a junio y 2026-2 de julio a diciembre."
+              actions={
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowTable((v) => !v)}
+                  >
+                    {showTable ? (
+                      <BarChart3 className="mr-2 h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Table2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                    )}
+                    {showTable ? "Ver gráficas" : "Ver tabla"}
+                  </Button>
+                  <Button variant="outline" onClick={exportSemesterCSV}>
+                    <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Resumen por ciclo
+                  </Button>
+                  <Button className="btn-primary" onClick={exportDetailCSV}>
+                    <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Detalle de eventos
+                  </Button>
+                </>
+              }
+            />
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard label="Eventos registrados" value={stats.total} />
-                <StatCard label="Aprobados" value={stats.aprobado} tone="approved" />
-                <StatCard label="En revisión" value={stats.en_revision} tone="pending" />
-                <StatCard label="Rechazados" value={stats.rechazado} tone="rejected" />
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-24">
+                <Loader2
+                  className="h-6 w-6 animate-spin text-primary"
+                  aria-hidden="true"
+                />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Cargando datos…
+                </p>
               </div>
-            </section>
-
-            {showTable ? (
-              <DataTable
-                semesters={semesters}
-                curve={curve}
-                status={statusBySemester}
-                program={programBySemester}
-                type={typeBySemester}
-                modality={modalityBySemester}
-              />
-            ) : (
-              <>
-                <ChartFrame
-                  title="Total de eventos por ciclo escolar"
-                  subtitle="Cada barra suma los eventos del ciclo, separados por el resultado de la revisión."
-                  icon={<BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />}
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] py-20 text-center">
+                <TriangleAlert
+                  className="h-6 w-6 text-[var(--state-rejected)]"
+                  aria-hidden="true"
+                />
+                <h2 className="mt-3 font-display text-base font-semibold text-ink">
+                  {error}
+                </h2>
+                <Button
+                  variant="outline"
+                  className="mt-4 bg-card"
+                  onClick={() => window.location.reload()}
                 >
-                  <StackedSemesterBars
-                    data={statusBySemester}
-                    keys={[...STATUS_KEYS]}
-                    colors={STATUS_COLORS}
-                    height={280}
+                  Volver a cargar
+                </Button>
+              </div>
+            ) : semesters.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
+                <BarChart3
+                  className="h-7 w-7 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <h2 className="mt-3 font-display text-base font-semibold text-ink">
+                  Todavía no hay eventos que analizar
+                </h2>
+                <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+                  En cuanto se registre el primer evento aparecerán aquí los
+                  totales por ciclo escolar.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Resumen — el selector alcanza sólo a estas cifras; las gráficas
+                muestran siempre la serie completa de ciclos. */}
+                <section>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="font-display text-lg font-semibold text-ink">
+                      {scopeHeading}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="scope"
+                        className="text-sm text-muted-foreground"
+                      >
+                        Ciclo escolar
+                      </label>
+                      <Select value={scope} onValueChange={setScope}>
+                        <SelectTrigger id="scope" className="w-44 bg-card">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>Todos los ciclos</SelectItem>
+                          {[...semesters].reverse().map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s} · {semesterLabel(s)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Eventos registrados" value={stats.total} />
+                    <StatCard
+                      label="Aprobados"
+                      value={stats.aprobado}
+                      tone="approved"
+                    />
+                    <StatCard
+                      label="En revisión"
+                      value={stats.en_revision}
+                      tone="pending"
+                    />
+                    <StatCard
+                      label="Rechazados"
+                      value={stats.rechazado}
+                      tone="rejected"
+                    />
+                  </div>
+                </section>
+
+                {showTable ? (
+                  <DataTable
+                    semesters={semesters}
+                    curve={curve}
+                    status={statusBySemester}
+                    program={programBySemester}
+                    type={typeBySemester}
+                    modality={modalityBySemester}
                   />
-                </ChartFrame>
+                ) : (
+                  <>
+                    <ChartFrame
+                      title="Total de eventos por ciclo escolar"
+                      subtitle="Cada barra suma los eventos del ciclo, separados por el resultado de la revisión."
+                      icon={
+                        <BarChart3
+                          className="h-4 w-4 text-primary"
+                          aria-hidden="true"
+                        />
+                      }
+                    >
+                      <StackedSemesterBars
+                        data={statusBySemester}
+                        keys={[...STATUS_KEYS]}
+                        colors={STATUS_COLORS}
+                        height={280}
+                      />
+                    </ChartFrame>
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                  <ChartFrame
-                    title="Eventos por programa por ciclo"
-                    subtitle="Composición de cada ciclo por programa educativo."
-                    icon={<Layers className="h-4 w-4 text-primary" aria-hidden="true" />}
-                  >
-                    <StackedSemesterBars
-                      data={programBySemester}
-                      keys={PROGRAMS}
-                      colors={SERIES}
-                    />
-                  </ChartFrame>
+                    <div className="grid gap-6 xl:grid-cols-2">
+                      <ChartFrame
+                        title="Eventos por programa por ciclo"
+                        subtitle="Composición de cada ciclo por programa educativo."
+                        icon={
+                          <Layers
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                        }
+                      >
+                        <StackedSemesterBars
+                          data={programBySemester}
+                          keys={PROGRAMS}
+                          colors={SERIES}
+                        />
+                      </ChartFrame>
 
-                  <ChartFrame
-                    title="Tipos de evento por ciclo"
-                    subtitle="Cómo se reparte cada ciclo entre académico, cultural, deportivo y salud."
-                    icon={<Layers className="h-4 w-4 text-primary" aria-hidden="true" />}
-                  >
-                    <StackedSemesterBars data={typeBySemester} keys={TYPES} colors={SERIES} />
-                  </ChartFrame>
-                </div>
+                      <ChartFrame
+                        title="Tipos de evento por ciclo"
+                        subtitle="Cómo se reparte cada ciclo entre académico, cultural, deportivo y salud."
+                        icon={
+                          <Layers
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                        }
+                      >
+                        <StackedSemesterBars
+                          data={typeBySemester}
+                          keys={TYPES}
+                          colors={SERIES}
+                        />
+                      </ChartFrame>
+                    </div>
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                  <ChartFrame
-                    title="Modalidad por ciclo"
-                    subtitle="Presencial, en línea y mixta a lo largo de los ciclos."
-                    icon={<Video className="h-4 w-4 text-primary" aria-hidden="true" />}
-                  >
-                    <StackedSemesterBars
-                      data={modalityBySemester}
-                      keys={MODALITIES}
-                      colors={SERIES}
-                    />
-                  </ChartFrame>
+                    <div className="grid gap-6 xl:grid-cols-2">
+                      <ChartFrame
+                        title="Modalidad por ciclo"
+                        subtitle="Presencial, en línea y mixta a lo largo de los ciclos."
+                        icon={
+                          <Video
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                        }
+                      >
+                        <StackedSemesterBars
+                          data={modalityBySemester}
+                          keys={MODALITIES}
+                          colors={SERIES}
+                        />
+                      </ChartFrame>
 
-                  <ChartFrame
-                    title="Curva de eventos por ciclo"
-                    subtitle="Trayectoria de los eventos registrados y de los que llegaron a aprobarse."
-                    icon={<LineIcon className="h-4 w-4 text-primary" aria-hidden="true" />}
-                  >
-                    <SemesterCurve data={curve} height={260} />
-                  </ChartFrame>
-                </div>
-              </>
+                      <ChartFrame
+                        title="Curva de eventos por ciclo"
+                        subtitle="Trayectoria de los eventos registrados y de los que llegaron a aprobarse."
+                        icon={
+                          <LineIcon
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                        }
+                      >
+                        <SemesterCurve data={curve} height={260} />
+                      </ChartFrame>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </AppShell>
     </ProtectedRoute>

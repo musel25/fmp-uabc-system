@@ -11,7 +11,7 @@ The site is the front door for organizing an event at the Faculty of Medicine an
 
 Rules the system enforces:
 
-- Events need **at least 21 calendar days** of lead time (`MIN_LEAD_DAYS` in `lib/workflow.ts`).
+- Events need **at least 5 business days (Monday–Friday, Tijuana)** of lead time (`MIN_LEAD_BUSINESS_DAYS` in `lib/workflow.ts`).
 - Events that **charge attendees** are not registered here — the wizard stops and points to the continuing-education office.
 - **External users** see the space rental prices and payment instructions inside the wizard (`EXTERNAL_USER_COSTS` in `lib/event-form.ts`).
 - All dates are captured and displayed in **Tijuana time** and stored in UTC (`lib/timezone.ts`).
@@ -61,3 +61,7 @@ The six-phase process guide shown to users (authorization, registration, review,
 | `/admin/analytics` | admin | Per-semester charts |
 
 Component-by-component detail: `docs/COMPONENTS.md`.
+
+## Reportes finales y seguimiento
+
+El reporte final es nativo: rutas `/events/[id]/report` y `/events/[id]/attendance-list`. `lib/supabase-reports.ts`, `supabase-progress.ts` y `supabase-attendance.ts` consultan Supabase bajo RLS. Escrituras de reporte/preparación usan RPC acotadas; Google usa HMAC con secreto privado. La interfaz nunca recibe ese secreto. Ver [configuración de asistencia](GOOGLE_ATTENDANCE_SETUP.md).

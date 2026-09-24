@@ -15,13 +15,22 @@
 export type EventStatus = "en_revision" | "aprobado" | "rechazado"
 
 /** Academic program the event belongs to. */
-export type EventProgram = "Médico" | "Psicología" | "Nutrición" | "Posgrado" | "Otro"
+export type EventProgram =
+  | "Médico"
+  | "Psicología"
+  | "Nutrición"
+  | "Posgrado"
+  | "Otro"
 
 /** General nature of the activity. */
 export type EventType = "Académico" | "Cultural" | "Deportivo" | "Salud"
 
 /** Format of the activity; "Otro" requires `classificationOther`. */
-export type EventClassification = "Conferencia" | "Seminario" | "Taller" | "Otro"
+export type EventClassification =
+  | "Conferencia"
+  | "Seminario"
+  | "Taller"
+  | "Otro"
 
 export type EventModality = "Presencial" | "En línea" | "Mixta"
 
@@ -98,3 +107,81 @@ export type CreateEventData = Omit<
   isAuthorized: boolean
   userType: UserType
 }
+
+export type ReportStatus = "draft" | "submitted"
+export type ParticipationMode = "none" | "listed" | null
+export type AttendeeCategory = "docente" | "alumno" | "comunidad" | null
+export interface TeacherOrganizer {
+  name: string
+  degree: string
+}
+export interface StudentOrganizer {
+  name: string
+  level: "licenciatura" | "maestria" | "otro_posgrado"
+}
+export interface ReportValues {
+  email: string
+  teacherCount: number | null
+  studentCount: number | null
+  communityCount: number | null
+  teacherMode: ParticipationMode
+  teachers: TeacherOrganizer[]
+  studentMode: ParticipationMode
+  students: StudentOrganizer[]
+  attendanceListUrl: string
+  photoUrls: string[]
+  narrative: string
+}
+export interface EventReport extends ReportValues {
+  eventId: string
+  eventName: string
+  status: ReportStatus
+  version: number
+  firstSubmittedAt: string | null
+  submittedAt: string | null
+  updatedAt: string
+  attendanceBasis: "list" | "google" | null
+  verifiedResponseCount: number | null
+  verifiedSnapshotAt: string | null
+}
+export interface AttendanceSummary {
+  eventId: string
+  state: "unconfigured" | "unverified" | "fresh" | "stale"
+  responseCount: number | null
+  lastSyncedAt: string | null
+}
+export interface AttendanceResponse {
+  eventId: string
+  sourceResponseId: string
+  submittedAt: string
+  name: string
+  email: string | null
+  category: AttendeeCategory
+}
+export interface PreparationValues {
+  reservationDone: boolean
+  diffusionDone: boolean
+  qrShared: boolean
+}
+export interface WorkflowSettings {
+  reportsRolloutAt: string | null
+  attendancePublishedUrl: string | null
+  attendancePrefillTemplate: string | null
+  attendanceEnabled: boolean
+}
+export type EventProgress =
+  | { state: "unavailable" }
+  | {
+      state: "loaded"
+      report: Pick<
+        EventReport,
+        | "status"
+        | "version"
+        | "submittedAt"
+        | "firstSubmittedAt"
+        | "attendanceBasis"
+      > | null
+      preparation: PreparationValues
+      attendance: AttendanceSummary
+      tracking: "current" | "legacy"
+    }

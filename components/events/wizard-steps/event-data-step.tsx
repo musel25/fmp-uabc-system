@@ -5,12 +5,22 @@ import type { UseFormReturn } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Info, TriangleAlert } from "lucide-react"
 import type { CreateEventData } from "@/lib/types"
-import { MIN_LEAD_DAYS } from "@/lib/workflow"
+import {
+  MIN_LEAD_BUSINESS_DAYS,
+  earliestEventLocalDate,
+  meetsRegistrationLead,
+} from "@/lib/business-days"
 import {
   CODIGOS_EMAIL,
   EXTERNAL_USER_COSTS,
@@ -48,16 +58,9 @@ export function EventDataStep({ form }: EventDataStepProps) {
     )
   }
 
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const formatLocalForInput = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-
-  const earliestStart = new Date()
-  earliestStart.setDate(earliestStart.getDate() + MIN_LEAD_DAYS)
-  const minStartDateStr = formatLocalForInput(earliestStart)
-
+  const minStartDateStr = earliestEventLocalDate(new Date()) + "T00:00"
   const belowMinLead = startDate
-    ? new Date(startDate).getTime() - Date.now() < MIN_LEAD_DAYS * 24 * 60 * 60 * 1000
+    ? !meetsRegistrationLead(startDate, new Date())
     : false
 
   const handleModalityChange = (value: string) => {
@@ -149,7 +152,9 @@ export function EventDataStep({ form }: EventDataStepProps) {
                     className="flex items-baseline justify-between gap-3 text-sm text-foreground/90"
                   >
                     <span>{space}</span>
-                    <span className="font-data text-xs font-semibold">{cost}</span>
+                    <span className="font-data text-xs font-semibold">
+                      {cost}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -171,7 +176,12 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
         <div>
           <Label htmlFor="phone">Teléfono de contacto *</Label>
-          <Input id="phone" {...register("phone")} placeholder="664-123-4567" className="mt-1" />
+          <Input
+            id="phone"
+            {...register("phone")}
+            placeholder="664-123-4567"
+            className="mt-1"
+          />
           <FieldError message={errors.phone?.message} />
         </div>
 
@@ -195,7 +205,10 @@ export function EventDataStep({ form }: EventDataStepProps) {
       <Fieldset legend="Clasificación">
         <div>
           <Label htmlFor="program">Programa *</Label>
-          <Select value={watch("program")} onValueChange={(v) => setValue("program", v as never)}>
+          <Select
+            value={watch("program")}
+            onValueChange={(v) => setValue("program", v as never)}
+          >
             <SelectTrigger id="program" className="mt-1">
               <SelectValue placeholder="Selecciona un programa" />
             </SelectTrigger>
@@ -211,7 +224,10 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
         <div>
           <Label htmlFor="type">Tipo *</Label>
-          <Select value={watch("type")} onValueChange={(v) => setValue("type", v as never)}>
+          <Select
+            value={watch("type")}
+            onValueChange={(v) => setValue("type", v as never)}
+          >
             <SelectTrigger id="type" className="mt-1">
               <SelectValue placeholder="Selecciona un tipo" />
             </SelectTrigger>
@@ -267,7 +283,9 @@ export function EventDataStep({ form }: EventDataStepProps) {
                   <Checkbox
                     id={id}
                     checked={seaesCategories.includes(category)}
-                    onCheckedChange={(checked) => toggleSeaesCategory(category, !!checked)}
+                    onCheckedChange={(checked) =>
+                      toggleSeaesCategory(category, !!checked)
+                    }
                     className="mt-0.5"
                   />
                   <Label htmlFor={id} className="text-sm font-normal leading-5">
@@ -285,25 +303,36 @@ export function EventDataStep({ form }: EventDataStepProps) {
           <Label htmlFor="startDate">Fecha y hora de inicio *</Label>
           <Input
             id="startDate"
+            onFocus={(e) => {
+              e.currentTarget.min =
+                earliestEventLocalDate(new Date()) + "T00:00"
+            }}
             type="datetime-local"
             min={minStartDateStr}
             {...register("startDate")}
             className="mt-1"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Se requieren al menos {MIN_LEAD_DAYS} días de anticipación.
+            Se requieren al menos {MIN_LEAD_BUSINESS_DAYS} días hábiles de
+            anticipación (lunes a viernes).
           </p>
           <FieldError message={errors.startDate?.message} />
           {!errors.startDate && belowMinLead && (
             <p className="mt-1 text-sm text-destructive">
-              Reagenda: no se cumplen los {MIN_LEAD_DAYS} días de anticipación.
+              Reagenda: no se cumplen los {MIN_LEAD_BUSINESS_DAYS} días hábiles
+              de anticipación (lunes a viernes).
             </p>
           )}
         </div>
 
         <div>
           <Label htmlFor="endDate">Fecha y hora de fin *</Label>
-          <Input id="endDate" type="datetime-local" {...register("endDate")} className="mt-1" />
+          <Input
+            id="endDate"
+            type="datetime-local"
+            {...register("endDate")}
+            className="mt-1"
+          />
           <FieldError message={errors.endDate?.message} />
         </div>
 
@@ -326,7 +355,11 @@ export function EventDataStep({ form }: EventDataStepProps) {
           <Input
             id="venue"
             {...register("venue")}
-            placeholder={isOnline ? "No se requiere en eventos en línea" : "Ej. Auditorio Principal FMP"}
+            placeholder={
+              isOnline
+                ? "No se requiere en eventos en línea"
+                : "Ej. Auditorio Principal FMP"
+            }
             className="mt-1"
             disabled={isOnline}
           />
@@ -350,7 +383,8 @@ export function EventDataStep({ form }: EventDataStepProps) {
         <div className="sm:col-span-2">
           <Label htmlFor="organizers">Organizadores *</Label>
           <p className="text-xs text-muted-foreground">
-            Tal como deben aparecer en las constancias, separados por punto y coma.
+            Tal como deben aparecer en las constancias, separados por punto y
+            coma.
           </p>
           <Textarea
             id="organizers"
@@ -386,8 +420,8 @@ export function EventDataStep({ form }: EventDataStepProps) {
 
           {hasCost && (
             <Notice tone="pending" className="mt-3">
-              Los eventos con costo se gestionan con el responsable de educación continua. Contáctalo
-              antes de continuar con el registro.
+              Los eventos con costo se gestionan con el responsable de educación
+              continua. Contáctalo antes de continuar con el registro.
             </Notice>
           )}
         </div>
@@ -396,10 +430,18 @@ export function EventDataStep({ form }: EventDataStepProps) {
   )
 }
 
-function Fieldset({ legend, children }: { legend: string; children: React.ReactNode }) {
+function Fieldset({
+  legend,
+  children,
+}: {
+  legend: string
+  children: React.ReactNode
+}) {
   return (
     <fieldset>
-      <legend className="eyebrow mb-3 border-b border-border pb-2 w-full">{legend}</legend>
+      <legend className="eyebrow mb-3 border-b border-border pb-2 w-full">
+        {legend}
+      </legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>
   )
@@ -425,7 +467,9 @@ function Notice({
       : "border-[var(--state-rejected-line)] bg-[var(--state-rejected-bg)] text-[var(--state-rejected)]"
 
   return (
-    <p className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${colors} ${className ?? ""}`}>
+    <p
+      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${colors} ${className ?? ""}`}
+    >
       <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="text-pretty">{children}</span>
     </p>

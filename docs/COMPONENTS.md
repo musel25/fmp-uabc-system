@@ -15,7 +15,7 @@ How each piece works and where to look when changing behavior. `components/ui/` 
 - the authorization question (*¿Dirección o subdirección ya autorizó este evento?* — Sí/No radio; "No" does **not** block, authorization can arrive after review),
 - identification (name, the internal/external question — choosing *externo* reveals the rental costs panel with `EXTERNAL_USER_COSTS` and payment steps),
 - classification (program/type/classification + the SEAES multi-select checkboxes),
-- dates (21-day lead-time hint and validation), modality/venue (venue disabled for online events), organizers, observations, and the has-cost checkbox that stops the flow.
+- dates (5-business-day lead-time hint and validation), modality/venue (venue disabled for online events), organizers, observations, and the has-cost checkbox that stops the flow.
 
 **`wizard-steps/event-files-step.tsx`** — step 2: the two long texts (event description, speakers' CVs) with word counters against `MAX_WORDS_LONG_FIELD`.
 
@@ -51,7 +51,7 @@ How each piece works and where to look when changing behavior. `components/ui/` 
 | `email.ts` | Resend templates + senders (never throw; see who gets notified in its header) |
 | `event-form.ts` | Wizard values type, converters, SEAES/costs catalogs |
 | `timezone.ts` | Tijuana ↔ UTC conversion for event dates |
-| `workflow.ts` | Phases, deadlines (`MIN_LEAD_DAYS`, evidence window), shared copy, date formatting |
+| `workflow.ts` | Phases, deadlines (`MIN_LEAD_BUSINESS_DAYS`, evidence window), shared copy, date formatting |
 | `semester.ts` | Date → school cycle ("2026-1"/"2026-2") |
 | `utils.ts` | `cn()` (clsx + tailwind-merge) |
 
@@ -59,3 +59,7 @@ How each piece works and where to look when changing behavior. `components/ui/` 
 
 - `hooks/use-toast.ts` — toast store used for every success/failure message.
 - `hooks/use-mobile.ts` — viewport breakpoint helper.
+
+## Reportes finales y seguimiento
+
+`EventReportForm`, `ReportOrganizers`, `ReportEvidence` y `ReportReceipt` implementan captura, revisión y comprobante. `EventChecklist` combina confirmaciones manuales con datos verificados. `AttendancePanel` genera QR local, instrucciones y descarga de participantes. `ReportAnalytics` muestra resultados separados de las solicitudes existentes.

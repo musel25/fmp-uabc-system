@@ -5,7 +5,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Check, ExternalLink, X } from "lucide-react"
 import { formatDateTime } from "@/lib/workflow"
@@ -73,9 +79,12 @@ export function AdminEventReviewDrawer({
         <SheetHeader className="space-y-3 border-b border-border p-5 text-left">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <SheetTitle className="font-display text-lg text-balance">{event.name}</SheetTitle>
+              <SheetTitle className="font-display text-lg text-balance">
+                {event.name}
+              </SheetTitle>
               <SheetDescription>
-                Solicitud de {event.responsible || "responsable no especificado"}
+                Solicitud de{" "}
+                {event.responsible || "responsable no especificado"}
                 {semester && ` · ciclo ${semester}`}
               </SheetDescription>
             </div>
@@ -90,12 +99,24 @@ export function AdminEventReviewDrawer({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-5">
+          {event.status === "aprobado" && (
+            <Link
+              className="mb-4 block text-primary underline"
+              href={`/events/${event.id}/report`}
+            >
+              Consultar reporte final
+            </Link>
+          )}
           <Section title="Datos del evento">
             <Field label="Inicio">
-              <span className="font-data text-xs">{formatDateTime(event.startDate)}</span>
+              <span className="font-data text-xs">
+                {formatDateTime(event.startDate)}
+              </span>
             </Field>
             <Field label="Fin">
-              <span className="font-data text-xs">{formatDateTime(event.endDate)}</span>
+              <span className="font-data text-xs">
+                {formatDateTime(event.endDate)}
+              </span>
             </Field>
             <Field label="Modalidad">{event.modality}</Field>
             <Field label="Sede">{event.venue || "No aplica"}</Field>
@@ -107,7 +128,9 @@ export function AdminEventReviewDrawer({
                 : event.classification}
             </Field>
             <Field label="Costo">
-              {event.hasCost ? "Con costo — requiere educación continua" : "Sin costo"}
+              {event.hasCost
+                ? "Con costo — requiere educación continua"
+                : "Sin costo"}
             </Field>
             <Field label="Autorización">
               {event.isAuthorized === null
@@ -117,42 +140,67 @@ export function AdminEventReviewDrawer({
                   : "Aún sin autorización"}
             </Field>
             <Field label="Usuario UABC">
-              {event.userType === null ? "Sin registrar" : event.userType === "externo" ? "Externo" : "Interno"}
+              {event.userType === null
+                ? "Sin registrar"
+                : event.userType === "externo"
+                  ? "Externo"
+                  : "Interno"}
             </Field>
             <Field label="Categorías SEAES">
-              {event.seaesCategories.length > 0 ? event.seaesCategories.join("; ") : "—"}
+              {event.seaesCategories.length > 0
+                ? event.seaesCategories.join("; ")
+                : "—"}
             </Field>
           </Section>
 
           <Section title="Contacto">
             <Field label="Correo">
-              <span className="font-data text-xs break-all">{event.email || "—"}</span>
+              <span className="font-data text-xs break-all">
+                {event.email || "—"}
+              </span>
             </Field>
             <Field label="Teléfono">
               <span className="font-data text-xs">{event.phone || "—"}</span>
             </Field>
           </Section>
 
-          {(event.modality === "En línea" || event.modality === "Mixta") && event.onlineInfo && (
-            <LongText title="Acceso en línea" body={event.onlineInfo} />
-          )}
+          {(event.modality === "En línea" || event.modality === "Mixta") &&
+            event.onlineInfo && (
+              <LongText title="Acceso en línea" body={event.onlineInfo} />
+            )}
 
-          <LongText title="Descripción del evento" body={event.programDetails} />
-          <LongText title="Semblanza curricular de ponentes" body={event.speakerCvs} />
+          <LongText
+            title="Descripción del evento"
+            body={event.programDetails}
+          />
+          <LongText
+            title="Semblanza curricular de ponentes"
+            body={event.speakerCvs}
+          />
           <LongText title="Organizadores" body={event.organizers} />
-          {event.observations && <LongText title="Observaciones" body={event.observations} />}
+          {event.observations && (
+            <LongText title="Observaciones" body={event.observations} />
+          )}
 
           {event.adminComments && (
-            <LongText title="Comentarios anteriores" body={event.adminComments} />
+            <LongText
+              title="Comentarios anteriores"
+              body={event.adminComments}
+            />
           )}
           {event.rejectionReason && (
-            <LongText title="Motivo de rechazo registrado" body={event.rejectionReason} />
+            <LongText
+              title="Motivo de rechazo registrado"
+              body={event.rejectionReason}
+            />
           )}
         </div>
 
         {pending && (
           <div className="border-t border-border bg-surface-2/60 p-5">
-            <h3 className="font-display text-sm font-semibold text-ink">Resolver la solicitud</h3>
+            <h3 className="font-display text-sm font-semibold text-ink">
+              Resolver la solicitud
+            </h3>
 
             <div className="mt-3 space-y-3">
               <div>
@@ -182,7 +230,9 @@ export function AdminEventReviewDrawer({
                     if (reasonError) setReasonError(null)
                   }}
                   aria-invalid={reasonError ? true : undefined}
-                  aria-describedby={reasonError ? "rejectionReason-error" : undefined}
+                  aria-describedby={
+                    reasonError ? "rejectionReason-error" : undefined
+                  }
                   className="mt-1 bg-card"
                   rows={2}
                 />
@@ -221,7 +271,13 @@ export function AdminEventReviewDrawer({
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   return (
     <section className="mb-5">
       <h3 className="eyebrow mb-1">{title}</h3>
@@ -230,10 +286,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <div className="field-row">
-      <dt className="shrink-0 text-sm font-medium text-muted-foreground sm:w-36">{label}</dt>
+      <dt className="shrink-0 text-sm font-medium text-muted-foreground sm:w-36">
+        {label}
+      </dt>
       <dd className="field-value">{children}</dd>
     </div>
   )
@@ -250,7 +314,9 @@ function LongText({ title, body }: { title: string; body?: string }) {
             {text}
           </p>
         ) : (
-          <p className="text-sm italic text-muted-foreground">Sin información.</p>
+          <p className="text-sm italic text-muted-foreground">
+            Sin información.
+          </p>
         )}
       </div>
     </section>

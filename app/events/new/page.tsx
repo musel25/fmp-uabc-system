@@ -33,7 +33,8 @@ export default function NewEventPage() {
 
       toast({
         title: "Evento enviado a revisión",
-        description: "La coordinación responderá por correo en 3 a 5 días hábiles.",
+        description:
+          "La coordinación responderá por correo en 3 a 5 días hábiles.",
       })
 
       router.push(`/events/${newEvent.id}`)
@@ -52,7 +53,7 @@ export default function NewEventPage() {
         <PageHeader
           eyebrow="Etapa 02 de la ruta del evento"
           title="Registrar evento"
-          description="Captura la actividad para enviarla a revisión con al menos tres semanas de anticipación."
+          description="Captura la actividad para enviarla a revisión con al menos cinco días hábiles de anticipación."
           actions={
             <ProcessGuideDialog
               activePhaseId="registro"
