@@ -1,5 +1,6 @@
 "use client"
 
+import { ReportAnalytics } from "@/components/admin/report-analytics"
 import { useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
@@ -77,6 +78,7 @@ function tally<T extends string>(
 }
 
 export default function AdminAnalyticsPage() {
+  const [analyticsTab,setAnalyticsTab]=useState<"requests"|"results">("results")
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -248,6 +250,8 @@ export default function AdminAnalyticsPage() {
   return (
     <ProtectedRoute requireAdmin>
       <AppShell showAdminToggle>
+        <div className="no-print mb-6 flex gap-2"><Button variant={analyticsTab === "results" ? "default" : "outline"} onClick={()=>setAnalyticsTab("results")}>Resultados de eventos</Button><Button variant={analyticsTab === "requests" ? "default" : "outline"} onClick={()=>setAnalyticsTab("requests")}>Solicitudes</Button></div>
+        {analyticsTab === "results" ? <ReportAnalytics/> : <>
         <PageHeader
           eyebrow="Administración"
           title="Panel de analíticas"
@@ -407,6 +411,7 @@ export default function AdminAnalyticsPage() {
             )}
           </div>
         )}
+      </>}
       </AppShell>
     </ProtectedRoute>
   )

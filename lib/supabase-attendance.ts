@@ -15,3 +15,8 @@ export async function getAttendancePage(eventId:string,cursor?:string):Promise<{
  const rows=data.slice(0,200).map(dbRowToAttendanceResponse)
  return{responses:rows,nextCursor:data.length>200?rows.at(-1)!.sourceResponseId:null}
 }
+export async function getAllAttendanceResponses(eventId:string):Promise<AttendanceResponse[]>{
+ const result:AttendanceResponse[]=[];let cursor:string|undefined
+ do{const page=await getAttendancePage(eventId,cursor);result.push(...page.responses);cursor=page.nextCursor??undefined}while(cursor)
+ return result
+}
