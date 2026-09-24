@@ -34,13 +34,18 @@ export function ReportOrganizers({
                 <label key={value} className="flex items-center gap-2 text-sm">
                   <input
                     type="radio"
+                    name={mode}
                     checked={form.watch(mode) === value}
                     onChange={() => {
                       form.setValue(mode, value, { shouldDirty: true })
-                      if (value === "none")
-                        form.setValue(isTeacher ? "teachers" : "students", [], {
-                          shouldDirty: true,
-                        })
+                      if (value === "none") {
+                        if (isTeacher) teachers.replace([])
+                        else students.replace([])
+                      } else if (isTeacher && teachers.fields.length === 0) {
+                        teachers.append({ name: "", degree: "" })
+                      } else if (!isTeacher && students.fields.length === 0) {
+                        students.append({ name: "", level: "licenciatura" })
+                      }
                     }}
                   />
                   {value === "listed" ? "Sí participaron" : "No participaron"}
