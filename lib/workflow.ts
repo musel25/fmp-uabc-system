@@ -398,7 +398,7 @@ export function nextStepFor(
         {
           kind: "internal",
           href: `/events/${event.id}/report`,
-          label: "Registrar reporte en plataforma",
+          label: "Subir evidencia",
         },
         {
           kind: "external",
