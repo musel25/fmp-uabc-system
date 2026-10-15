@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { createCsv, downloadCsv } from "@/lib/csv"
 import { buildAttendanceLink } from "@/lib/attendance"
 import { getWorkflowSettings } from "@/lib/supabase-progress"
+import { WORKFLOW_LINKS } from "@/lib/workflow"
 import {
   getAttendanceSummary,
   getAttendancePage,
@@ -28,7 +29,8 @@ export function AttendancePanel({
     [people, setPeople] = useState<AttendanceResponse[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [showPeople, setShowPeople] = useState(false),
-    [busy, setBusy] = useState(false)
+    [busy, setBusy] = useState(false),
+    [linked, setLinked] = useState(false)
   useEffect(() => {
     let active = true
     void (async () => {
@@ -37,17 +39,19 @@ export function AttendancePanel({
           getWorkflowSettings(),
           getAttendanceSummary(event.id),
         ])
-        const link = buildAttendanceLink(s, event.id)
-        const image = link
-          ? await QRCode.toDataURL(link, {
-              width: 800,
-              margin: 4,
-              errorCorrectionLevel: "M",
-              color: { dark: "#000000", light: "#ffffff" },
-            })
-          : ""
+        // Sin plantilla precargada usamos el formulario general: sirve para
+        // registrar asistencia, pero sus respuestas no se vinculan al evento.
+        const eventLink = buildAttendanceLink(s, event.id)
+        const link = eventLink ?? WORKFLOW_LINKS.registroAsistencia
+        const image = await QRCode.toDataURL(link, {
+          width: 800,
+          margin: 4,
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#ffffff" },
+        })
         if (active) {
           setUrl(link)
+          setLinked(eventLink !== null)
           setQr(image)
           setSummary(a)
         }
@@ -215,45 +219,53 @@ export function AttendancePanel({
         </>
       )}
       <div className="rounded-md border p-4">
-        <p className="font-medium">
-          {summary?.state === "fresh"
-            ? `${summary.responseCount} respuestas recibidas`
-            : summary?.state === "stale"
-              ? "Asistencia pendiente de actualización"
-              : "Asistencia sin verificar"}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {summary?.lastSyncedAt
-            ? `Última sincronización: ${new Date(summary.lastSyncedAt).toLocaleString("es-MX", { timeZone: "America/Tijuana" })}. `
-            : ""}
-          Google se consulta aproximadamente cada 15 minutos. Las respuestas no
-          equivalen necesariamente a personas únicas.
-        </p>
+        {linked && (
+          <>
+            <p className="font-medium">
+              {summary?.state === "fresh"
+                ? `${summary.responseCount} respuestas recibidas`
+                : summary?.state === "stale"
+                  ? "Asistencia pendiente de actualización"
+                  : "Asistencia sin verificar"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {summary?.lastSyncedAt
+                ? `Última sincronización: ${new Date(summary.lastSyncedAt).toLocaleString("es-MX", { timeZone: "America/Tijuana" })}. `
+                : ""}
+              Google se consulta aproximadamente cada 15 minutos. Las respuestas
+              no equivalen necesariamente a personas únicas.
+            </p>
+          </>
+        )}
         <div className="no-print mt-3 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void refresh()}
-            disabled={busy}
-          >
-            Actualizar estado
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void loadPeople()}
-            disabled={busy}
-          >
-            Ver participantes
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => void exportParticipants()}
-          >
-            Descargar participantes CSV
-          </Button>
+          {linked && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void refresh()}
+                disabled={busy}
+              >
+                Actualizar estado
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void loadPeople()}
+                disabled={busy}
+              >
+                Ver participantes
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void exportParticipants()}
+              >
+                Descargar participantes CSV
+              </Button>
+            </>
+          )}
           <Button asChild size="sm" variant="outline">
             <Link href={`/events/${event.id}/attendance-list`}>
               Plantilla de lista alternativa
