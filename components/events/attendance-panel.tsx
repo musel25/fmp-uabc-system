@@ -161,13 +161,13 @@ export function AttendancePanel({
       <h2 className="font-display text-xl">
         Registro de asistencia para participantes
       </h2>
-      <p className="text-sm leading-6">
-        <strong>Este formulario lo llena cada participante.</strong> Proyecta o
-        comparte el QR durante el evento y pide que cada persona registre su
-        propia asistencia. Comprueben el ID del evento antes de enviar.
-      </p>
-      {url && qr ? (
+      {url && qr && (
         <>
+          <p className="text-sm leading-6">
+            <strong>Este formulario lo llena cada participante.</strong>{" "}
+            Proyecta o comparte el QR durante el evento y pide que cada persona
+            registre su propia asistencia.
+          </p>
           <div className="flex flex-col items-start gap-5 @md:flex-row">
             <Image
               src={qr}
@@ -192,7 +192,7 @@ export function AttendancePanel({
                   variant="outline"
                   onClick={() =>
                     void copy(
-                      `Participantes de ${event.name}: registren su propia asistencia en ${url}. Comprueben el ID del evento antes de enviar. Si Google solicita iniciar sesión, usen la cuenta permitida por el formulario.`,
+                      `Participantes de ${event.name}: registren su propia asistencia en ${url}. Si Google solicita iniciar sesión, usen la cuenta permitida por el formulario.`,
                     )
                   }
                 >
@@ -213,12 +213,6 @@ export function AttendancePanel({
             </div>
           </div>
         </>
-      ) : (
-        <div className="rounded-md bg-surface-2 p-4 text-sm">
-          QR por evento pendiente de configuración. Coordinación debe conectar
-          el formulario. Mientras tanto, puedes conservar una lista de
-          asistencia.
-        </div>
       )}
       <div className="rounded-md border p-4">
         <p className="font-medium">
