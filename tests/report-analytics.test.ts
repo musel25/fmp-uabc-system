@@ -4,6 +4,7 @@ import { semesterOf, currentSemester } from "@/lib/semester"
 import { emptyReportValues } from "@/lib/event-report"
 import { event, progress } from "./fixtures"
 import type { EventReport } from "@/lib/types"
+import { attendanceQuestionStats, attendanceCsvRows } from "@/lib/attendance-analytics"
 const report: EventReport = {
   ...emptyReportValues("a@example.test"),
   eventId: event.id,
@@ -63,4 +64,27 @@ it("keeps late reports in the event semester for totals and exports", () => {
  expect(reportCsvRows(filtered)).toHaveLength(2)
  expect(reportCsvRows(filtered)[1][2]).toBe("2026-2")
  expect(filterReportRows(rows,{})).toHaveLength(2)
+})
+it("counts each choice once per response and lists text questions without exposing values", () => {
+  const responses = [
+    { eventId: event.id, sourceResponseId: "1", submittedAt: "2026-09-21T18:00:00Z", name: "Ana", email: null, category: null,
+      answers: [
+        { questionId: "3", question: "Género", kind: "choice" as const, value: "Mujer" },
+        { questionId: "4", question: "Programa", kind: "choice" as const, value: ["Medicina", "Posgrado"] },
+        { questionId: "5", question: "Matrícula", kind: "text" as const, value: "123" },
+      ] },
+    { eventId: event.id, sourceResponseId: "2", submittedAt: "2026-09-21T18:01:00Z", name: "Luis", email: null, category: null,
+      answers: [
+        { questionId: "3", question: "Género", kind: "choice" as const, value: "Hombre" },
+        { questionId: "4", question: "Programa", kind: "choice" as const, value: ["Medicina"] },
+      ] },
+  ]
+  expect(attendanceQuestionStats(responses)).toEqual([
+    { questionId: "3", question: "Género", kind: "choice", responses: 2, choices: [{ value: "Mujer", count: 1 }, { value: "Hombre", count: 1 }] },
+    { questionId: "4", question: "Programa", kind: "choice", responses: 2, choices: [{ value: "Medicina", count: 2 }, { value: "Posgrado", count: 1 }] },
+    { questionId: "5", question: "Matrícula", kind: "text", responses: 1, choices: [] },
+  ])
+  expect(attendanceCsvRows(event, responses)[0]).toContain("Matrícula")
+  expect(attendanceCsvRows(event, responses)[1].at(-1)).toBe("123")
+  expect(attendanceCsvRows(event, responses)[2].at(-1)).toBe("")
 })

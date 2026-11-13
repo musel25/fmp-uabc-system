@@ -162,6 +162,7 @@ export function dbRowToAttendanceResponse(r: EventRow): AttendanceResponse {
     name: r.name as string,
     email: r.email as string | null,
     category: r.category as AttendanceResponse["category"],
+    answers: (r.answers ?? []) as AttendanceResponse["answers"],
   }
 }
 export function dbRowToPreparation(r: EventRow | null): PreparationValues {

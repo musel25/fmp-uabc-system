@@ -31,15 +31,22 @@ function send_(c,payload) {
 function normalizeResponses(responses,c) {
   var groups={},unmatched=0;
   responses.forEach(function(response){
-    var answers={};response.getItemResponses().forEach(function(item){answers[String(item.getItem().getId())]=item.getResponse();});
-    var eventId=String(answers[c.FMP_EVENT_ITEM_ID]||'').trim().toLowerCase();
+    var byId={},allAnswers=[];
+    response.getItemResponses().forEach(function(item){
+      var question=item.getItem(),value=item.getResponse(),id=String(question.getId());
+      byId[id]=value;
+      if(value===null||value===undefined||value===''||(Array.isArray(value)&&value.length===0))return;
+      var type=String(question.getType());
+      allAnswers.push({questionId:id,question:question.getTitle(),kind:['MULTIPLE_CHOICE','CHECKBOX','LIST','SCALE','GRID','CHECKBOX_GRID'].indexOf(type)>=0?'choice':'text',value:Array.isArray(value)?value.map(String):String(value)});
+    });
+    var eventId=String(byId[c.FMP_EVENT_ITEM_ID]||'').trim().toLowerCase();
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(eventId)){unmatched++;return;}
-    var name=String(answers[c.FMP_NAME_ITEM_ID]||'').trim(),id=response.getId();
+    var name=String(byId[c.FMP_NAME_ITEM_ID]||'').trim(),id=response.getId();
     if(!name||!id)throw new Error('A linked response has no participant name or response ID; no snapshots sent');
-    var email=c.FMP_EMAIL_ITEM_ID?String(answers[c.FMP_EMAIL_ITEM_ID]||'').trim():response.getRespondentEmail();
-    var category=c.categoryMap[String(answers[c.FMP_CATEGORY_ITEM_ID]||'')]||null;
+    var email=c.FMP_EMAIL_ITEM_ID?String(byId[c.FMP_EMAIL_ITEM_ID]||'').trim():response.getRespondentEmail();
+    var category=c.categoryMap[String(byId[c.FMP_CATEGORY_ITEM_ID]||'')]||null;
     if(category!==null&&['docente','alumno','comunidad'].indexOf(category)<0)throw new Error('Invalid category map');
-    (groups[eventId]||(groups[eventId]=[])).push({sourceResponseId:id,submittedAt:response.getTimestamp().toISOString(),name:name,email:email||null,category:category});
+    (groups[eventId]||(groups[eventId]=[])).push({sourceResponseId:id,submittedAt:response.getTimestamp().toISOString(),name:name,email:email||null,category:category,answers:allAnswers});
   });
   Object.keys(groups).forEach(function(id){groups[id].sort(function(a,b){return a.sourceResponseId.localeCompare(b.sourceResponseId);});});
   return {groups:groups,unmatched:unmatched};

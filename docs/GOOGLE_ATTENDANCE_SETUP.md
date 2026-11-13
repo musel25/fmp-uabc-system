@@ -27,6 +27,8 @@ El reporte final vive en la plataforma. Este puente conserva el Google Form de *
 
 El puente lee todas las respuestas antes de enviar snapshots por evento aprobado. Hay un máximo de 5,000 respuestas y 2 MiB por snapshot; si se rebasa, se detiene ese envío con error y debe ampliarse la estrategia antes de usar eventos de ese tamaño. Los conteos son respuestas, no personas deduplicadas. Sin una pregunta de categoría se conserva «No capturada».
 
+Antes de publicar la vista de preguntas, aplicar `migrations/006_attendance_form_answers.sql` en Supabase y actualizar `Code.gs` en Apps Script. La próxima sincronización completa agregará las respuestas existentes que Google aún conserve. La página de estadísticos permite abrir un evento, ver el conteo de cada opción y descargar todas sus respuestas en CSV. Las preguntas de texto se muestran en la tabla y el CSV. Los datos personales tienen los mismos permisos de lectura que la asistencia: propietario del evento y coordinación. El formulario público consultado en noviembre de 2026 no tenía la pregunta «ID del evento»; agregarla y configurar `FMP_EVENT_ITEM_ID` es necesario para vincular respuestas.
+
 ## Prueba antes de anunciar la conexión
 
 Usar un evento aprobado de prueba que coordinación haya identificado. Abrir el QR desde un teléfono y comprobar el UUID y nombre del evento en la plataforma. Enviar una respuesta de prueba, ejecutar `syncAttendance` y verificar que el evento correcto pase a una respuesta. Repetir la sincronización: debe seguir en una. Agregar otra, corregir el evento y eliminar únicamente respuestas de prueba, comprobando que el siguiente snapshot refleje los cambios. Probar un reporte sin lista con respuestas verificadas y otro con lista cuando no haya respuestas.

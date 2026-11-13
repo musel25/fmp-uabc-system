@@ -38,4 +38,14 @@ DO $$ DECLARE a jsonb; b jsonb; BEGIN
  BEGIN PERFORM pg_temp.send_snapshot(jsonb_set(a,'{snapshotStartedAt}',to_jsonb(now()-interval '8 seconds'))); RAISE EXCEPTION 'Deleted response resurrected'; EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
  IF EXISTS(SELECT 1 FROM public.attendance_responses WHERE source_response_id='moved') THEN RAISE EXCEPTION 'Tombstone failed'; END IF;
 END $$;
+DO $$ DECLARE payload jsonb; saved jsonb; BEGIN
+ payload:=jsonb_build_object('version',1,'action','snapshot','sourceFormId','test-form','eventId','00000000-0000-4000-8000-000000000041','snapshotStartedAt',now()-interval '4 seconds','responses',jsonb_build_array(jsonb_build_object('sourceResponseId','answers','submittedAt',now()-interval '1 day','name','Ana','answers',jsonb_build_array(jsonb_build_object('questionId','3','question','Género','kind','choice','value','Mujer')))));
+ PERFORM pg_temp.send_snapshot(payload);
+ SELECT answers INTO saved FROM public.attendance_responses WHERE source_response_id='answers';
+ IF saved->0->>'question'<>'Género' OR saved->0->>'value'<>'Mujer' THEN RAISE EXCEPTION 'Form answers not stored'; END IF;
+ BEGIN
+  PERFORM pg_temp.send_snapshot(jsonb_set(jsonb_set(payload,'{snapshotStartedAt}',to_jsonb(now()-interval '3 seconds')),'{responses,0,answers,0,kind}','"invalid"'));
+  RAISE EXCEPTION 'Invalid answer accepted';
+ EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
+END $$;
 ROLLBACK;

@@ -5,6 +5,7 @@ import Link from "next/link"
 import QRCode from "qrcode"
 import { Button } from "@/components/ui/button"
 import { createCsv, downloadCsv } from "@/lib/csv"
+import { attendanceCsvRows } from "@/lib/attendance-analytics"
 import { buildAttendanceLink } from "@/lib/attendance"
 import { getWorkflowSettings } from "@/lib/supabase-progress"
 import { WORKFLOW_LINKS } from "@/lib/workflow"
@@ -107,28 +108,7 @@ export function AttendancePanel({
     try {
       const all = await getAllAttendanceResponses(event.id)
       downloadCsv(
-        createCsv([
-          [
-            "ID del evento",
-            "Evento",
-            "ID de respuesta",
-            "Fecha (Tijuana)",
-            "Nombre",
-            "Correo",
-            "Categoría",
-          ],
-          ...all.map((p) => [
-            event.id,
-            event.name,
-            p.sourceResponseId,
-            new Date(p.submittedAt).toLocaleString("es-MX", {
-              timeZone: "America/Tijuana",
-            }),
-            p.name,
-            p.email,
-            p.category,
-          ]),
-        ]),
+        createCsv(attendanceCsvRows(event, all)),
         "participantes-" + event.id + ".csv",
       )
     } catch {
@@ -262,7 +242,7 @@ export function AttendancePanel({
                 disabled={busy}
                 onClick={() => void exportParticipants()}
               >
-                Descargar participantes CSV
+                Descargar asistencia CSV
               </Button>
             </>
           )}

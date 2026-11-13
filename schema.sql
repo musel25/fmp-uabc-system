@@ -201,7 +201,7 @@ CREATE TABLE public.event_reports(
  attendance_basis text CHECK(attendance_basis IN ('list','google')), verified_response_count integer, verified_snapshot_at timestamptz
 );
 CREATE TABLE public.event_preparation(event_id uuid PRIMARY KEY REFERENCES public.events(id) ON DELETE CASCADE, reservation_done boolean NOT NULL DEFAULT false,diffusion_done boolean NOT NULL DEFAULT false,qr_shared boolean NOT NULL DEFAULT false);
-CREATE TABLE public.attendance_responses(event_id uuid NOT NULL REFERENCES public.events(id) ON DELETE CASCADE, source_form_id text NOT NULL, source_response_id text NOT NULL, submitted_at timestamptz NOT NULL, name text NOT NULL, email text, category text CHECK(category IN ('docente','alumno','comunidad')), PRIMARY KEY(source_form_id,source_response_id));
+CREATE TABLE public.attendance_responses(event_id uuid NOT NULL REFERENCES public.events(id) ON DELETE CASCADE, source_form_id text NOT NULL, source_response_id text NOT NULL, submitted_at timestamptz NOT NULL, name text NOT NULL, email text, category text CHECK(category IN ('docente','alumno','comunidad')), answers jsonb NOT NULL DEFAULT '[]'::jsonb, PRIMARY KEY(source_form_id,source_response_id));
 CREATE INDEX attendance_event_idx ON public.attendance_responses(event_id,source_response_id);
 CREATE TABLE public.attendance_sync_state(event_id uuid PRIMARY KEY REFERENCES public.events(id) ON DELETE CASCADE, source_form_id text NOT NULL, snapshot_started_at timestamptz NOT NULL, last_synced_at timestamptz NOT NULL, response_count integer NOT NULL CHECK(response_count>=0), snapshot_hash text NOT NULL);
 DO $$ DECLARE tab text; BEGIN
@@ -308,7 +308,7 @@ CREATE TABLE private.attendance_response_versions(source_form_id text NOT NULL,s
 REVOKE ALL ON private.attendance_response_versions FROM PUBLIC,anon,authenticated;
 CREATE FUNCTION public.attendance_sync(p_body text,p_sent_at bigint,p_signature text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE payload jsonb; secret text; source_id text; expected text; action text; eid uuid; started timestamptz; old public.attendance_sync_state; hash text; rows jsonb; item jsonb; result jsonb; after_id uuid; last_id uuid; ids uuid[]; affected uuid[]; count_rows integer;
+DECLARE payload jsonb; secret text; source_id text; expected text; action text; eid uuid; started timestamptz; old public.attendance_sync_state; hash text; rows jsonb; item jsonb; answer jsonb; result jsonb; after_id uuid; last_id uuid; ids uuid[]; affected uuid[]; count_rows integer;
 BEGIN
  IF p_body IS NULL OR octet_length(p_body)>2097152 OR p_sent_at IS NULL OR abs(extract(epoch from clock_timestamp())-p_sent_at)>300 OR p_signature IS NULL THEN RAISE insufficient_privilege; END IF;
  payload:=p_body::jsonb; source_id:=payload->>'sourceFormId';
@@ -339,6 +339,14 @@ BEGIN
  FOR item IN SELECT value FROM jsonb_array_elements(rows) LOOP
   IF jsonb_typeof(item) IS DISTINCT FROM 'object' OR jsonb_typeof(item->'sourceResponseId') IS DISTINCT FROM 'string' OR length(item->>'sourceResponseId') NOT BETWEEN 1 AND 300 OR jsonb_typeof(item->'name') IS DISTINCT FROM 'string' OR length(btrim(item->>'name')) NOT BETWEEN 1 AND 250 OR jsonb_typeof(item->'submittedAt') IS DISTINCT FROM 'string' OR (item->>'submittedAt')::timestamptz>clock_timestamp()+interval '30 seconds' OR (item->>'submittedAt')::timestamptz IS NULL THEN RAISE EXCEPTION 'Invalid response fields' USING ERRCODE='22023'; END IF;
   IF (item->>'email' IS NOT NULL AND (jsonb_typeof(item->'email')<>'string' OR length(item->>'email')>254)) OR (item->>'category' IS NOT NULL AND item->>'category' NOT IN ('docente','alumno','comunidad')) THEN RAISE EXCEPTION 'Invalid optional fields' USING ERRCODE='22023'; END IF;
+  IF jsonb_typeof(coalesce(item->'answers','[]'::jsonb))<>'array' THEN RAISE EXCEPTION 'Invalid answers' USING ERRCODE='22023'; END IF;
+  IF jsonb_array_length(coalesce(item->'answers','[]'::jsonb))>100 THEN RAISE EXCEPTION 'Too many answers' USING ERRCODE='22023'; END IF;
+  FOR answer IN SELECT value FROM jsonb_array_elements(coalesce(item->'answers','[]'::jsonb)) LOOP
+   IF jsonb_typeof(answer)<>'object' OR jsonb_typeof(answer->'questionId')<>'string' OR length(answer->>'questionId') NOT BETWEEN 1 AND 100 OR jsonb_typeof(answer->'question')<>'string' OR length(answer->>'question') NOT BETWEEN 1 AND 500 OR coalesce(answer->>'kind','') NOT IN ('choice','text') OR coalesce(jsonb_typeof(answer->'value'),'') NOT IN ('string','array') OR octet_length(answer::text)>10000 THEN RAISE EXCEPTION 'Invalid answer' USING ERRCODE='22023'; END IF;
+   IF jsonb_typeof(answer->'value')='array' THEN
+    IF jsonb_array_length(answer->'value')>50 OR EXISTS(SELECT 1 FROM jsonb_array_elements(answer->'value') x WHERE jsonb_typeof(x.value)<>'string') THEN RAISE EXCEPTION 'Invalid answer choices' USING ERRCODE='22023'; END IF;
+   END IF;
+  END LOOP;
   IF EXISTS(SELECT 1 FROM private.attendance_response_versions v WHERE v.source_form_id=source_id AND v.source_response_id=item->>'sourceResponseId' AND v.snapshot_started_at>started) THEN RAISE EXCEPTION 'Outdated response version' USING ERRCODE='22023'; END IF;
  END LOOP;
  SELECT array_agg(DISTINCT event_id) INTO affected FROM public.attendance_responses a WHERE a.source_form_id=source_id AND a.source_response_id IN(SELECT x->>'sourceResponseId' FROM jsonb_array_elements(rows) x);
@@ -346,8 +354,8 @@ BEGIN
  ON CONFLICT(source_form_id,source_response_id) DO UPDATE SET snapshot_started_at=EXCLUDED.snapshot_started_at,event_id=NULL;
  DELETE FROM public.attendance_responses WHERE event_id=eid;
  FOR item IN SELECT value FROM jsonb_array_elements(rows) LOOP
-  INSERT INTO public.attendance_responses VALUES(eid,source_id,item->>'sourceResponseId',(item->>'submittedAt')::timestamptz,btrim(item->>'name'),nullif(btrim(item->>'email'),''),item->>'category')
-  ON CONFLICT(source_form_id,source_response_id) DO UPDATE SET event_id=EXCLUDED.event_id,submitted_at=EXCLUDED.submitted_at,name=EXCLUDED.name,email=EXCLUDED.email,category=EXCLUDED.category;
+  INSERT INTO public.attendance_responses(event_id,source_form_id,source_response_id,submitted_at,name,email,category,answers) VALUES(eid,source_id,item->>'sourceResponseId',(item->>'submittedAt')::timestamptz,btrim(item->>'name'),nullif(btrim(item->>'email'),''),item->>'category',coalesce(item->'answers','[]'::jsonb))
+  ON CONFLICT(source_form_id,source_response_id) DO UPDATE SET event_id=EXCLUDED.event_id,submitted_at=EXCLUDED.submitted_at,name=EXCLUDED.name,email=EXCLUDED.email,category=EXCLUDED.category,answers=EXCLUDED.answers;
   INSERT INTO private.attendance_response_versions VALUES(source_id,item->>'sourceResponseId',started,eid)
   ON CONFLICT(source_form_id,source_response_id) DO UPDATE SET snapshot_started_at=EXCLUDED.snapshot_started_at,event_id=EXCLUDED.event_id;
  END LOOP;

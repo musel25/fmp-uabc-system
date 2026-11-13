@@ -13,6 +13,7 @@ import {
 } from "recharts"
 import { Button } from "@/components/ui/button"
 import { StatCard } from "@/components/ui/stat-card"
+import { AttendanceQuestionDetail } from "@/components/admin/attendance-question-detail"
 import { getReportAnalyticsRows } from "@/lib/supabase-reports"
 import {
   filterReportRows,
@@ -30,6 +31,7 @@ export function ReportAnalytics() {
     [semester, setSemester] = useState(() => currentSemester()),
     [program, setProgram] = useState(""),
     [eventId, setEventId] = useState(""),
+    [detailEvent, setDetailEvent] = useState<Event | null>(null),
     [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true
@@ -52,6 +54,15 @@ export function ReportAnalytics() {
       active = false
     }
   }, [reload])
+  useEffect(() => {
+    if (detailEvent) {
+      document.getElementById("preguntas-asistencia")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }
+  }, [detailEvent])
+  useEffect(() => setDetailEvent(null), [semester, program, eventId])
   const filtered = useMemo(
     () =>
       filterReportRows(rows, {
@@ -264,6 +275,7 @@ export function ReportAnalytics() {
                 "Alumnos",
                 "Comunidad",
                 "Respuestas Google",
+                "Asistencia",
               ].map((label) => (
                 <th className="p-3" key={label}>
                   {label}
@@ -303,9 +315,18 @@ export function ReportAnalytics() {
                 ))}
                 <td className="p-3">
                   {progress.state === "loaded" &&
-                  progress.attendance.state === "fresh"
-                    ? progress.attendance.responseCount
+                  progress.attendance.responseCount !== null
+                    ? `${progress.attendance.responseCount}${progress.attendance.state === "stale" ? " (sin actualizar)" : ""}`
                     : "Sin verificar"}
+                </td>
+                <td className="p-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDetailEvent(event)}
+                  >
+                    Ver preguntas
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -315,6 +336,9 @@ export function ReportAnalytics() {
           <p className="p-5 text-sm">No hay eventos para estos filtros.</p>
         )}
       </div>
+      {detailEvent && (
+        <AttendanceQuestionDetail key={detailEvent.id} event={detailEvent} />
+      )}
     </div>
   )
 }
