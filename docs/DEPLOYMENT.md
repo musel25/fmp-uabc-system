@@ -31,3 +31,16 @@ No service-role key is used anywhere, on purpose.
 ## Reportes finales y seguimiento
 
 Aplicar migraciones 003, 004 y 005 en orden antes del frontend. Mantener `reports_rollout_at` nulo hasta verificar el despliegue; entonces establecer explícitamente el instante de corte (UTC) en `public.workflow_settings`. No marcar retrospectivamente todos los eventos sin reporte como pendientes. Google puede seguir sin configurar: se permite lista alternativa. Si es necesario revertir, restaurar el frontend anterior conservando tablas y datos; no ejecutar eliminaciones. La integración se deshabilita mediante `private.attendance_integrations.enabled`. Consultar [pruebas y límites](REPORTING_ACCEPTANCE.md).
+
+## Estadísticos del reporte final (006–007)
+
+Antes de publicar, aplicar únicamente las migraciones pendientes: 006 agrega `attendance_responses.answers` y actualiza la función de sincronización; 007 crea el archivo histórico con lectura exclusiva de administradores. Ambas usan una transacción al ejecutarlas como archivos SQL. El formulario de reporte final no necesita cambios ni una conexión a la integración de participantes.
+
+1. Consultar el historial de migraciones y comprobar las columnas y tablas existentes.
+2. Guardar respaldos de esquema y datos fuera del repositorio, con acceso restringido. El respaldo de datos incluye los esquemas de aplicación, autenticación y almacenamiento.
+3. Restaurar los datos de aplicación en una base local descartable y probar las migraciones pendientes. Comparar conteos y huellas del contenido antes y después.
+4. Aplicar las migraciones a producción antes de integrar el frontend. Registrar cada migración en el historial de Supabase. Si se usa una herramienta que administra la transacción, evitar un `COMMIT` interno que cierre esa transacción antes de registrar el historial.
+5. Comparar los datos de producción con el estado previo. Verificar RLS, permisos de funciones y la nueva columna.
+6. Publicar desde `master` y comprobar el estado `READY` y el dominio de producción.
+
+No ejecutar `schema.sql` sobre producción ni usar reinicios de base de datos. No reemplazar el archivo histórico durante el despliegue. La importación del CSV es una operación posterior con vista previa. Para revertir el frontend, conservar las tablas y los datos agregados.

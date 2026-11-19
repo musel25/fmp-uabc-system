@@ -1,4 +1,5 @@
 -- Historical final-report CSV. This is separate from participant attendance.
+BEGIN;
 CREATE TABLE public.report_form_archive (
   source_form_id text PRIMARY KEY CHECK (source_form_id='1wGwLI7a9HDV1Gsy446XWzH3wacKkYfJoSiBAYTeqXk4'),
   headers jsonb NOT NULL,
@@ -39,3 +40,4 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.save_report_form_archive(jsonb,jsonb,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.save_report_form_archive(jsonb,jsonb,integer) TO authenticated;
+COMMIT;
