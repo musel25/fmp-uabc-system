@@ -1,6 +1,7 @@
 "use client"
 
 import { ReportAnalytics } from "@/components/admin/report-analytics"
+import { ReportFormArchive } from "@/components/admin/report-form-archive"
 import { useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/layout/protected-route"
 import { AppShell } from "@/components/layout/app-shell"
@@ -91,7 +92,7 @@ function tally<T extends string>(
 }
 
 export default function AdminAnalyticsPage() {
-  const [analyticsTab, setAnalyticsTab] = useState<"requests" | "results">(
+  const [analyticsTab, setAnalyticsTab] = useState<"requests" | "results" | "form">(
     "results",
   )
   const [events, setEvents] = useState<Event[]>([])
@@ -277,12 +278,18 @@ export default function AdminAnalyticsPage() {
   return (
     <ProtectedRoute requireAdmin>
       <AppShell showAdminToggle>
-        <div className="no-print mb-6 flex gap-2">
+        <div className="no-print mb-6 flex flex-wrap gap-2">
           <Button
             variant={analyticsTab === "results" ? "default" : "outline"}
             onClick={() => setAnalyticsTab("results")}
           >
             Resultados de eventos
+          </Button>
+          <Button
+            variant={analyticsTab === "form" ? "default" : "outline"}
+            onClick={() => setAnalyticsTab("form")}
+          >
+            Formulario anterior
           </Button>
           <Button
             variant={analyticsTab === "requests" ? "default" : "outline"}
@@ -293,6 +300,8 @@ export default function AdminAnalyticsPage() {
         </div>
         {analyticsTab === "results" ? (
           <ReportAnalytics />
+        ) : analyticsTab === "form" ? (
+          <ReportFormArchive />
         ) : (
           <>
             <PageHeader

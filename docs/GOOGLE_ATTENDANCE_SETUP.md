@@ -2,6 +2,8 @@
 
 El reporte final vive en la plataforma. Este puente conserva el Google Form de **participantes** y consulta sus respuestas para decidir si hace falta una lista alternativa. Tener un enlace o marcar «QR compartido» no acredita asistencia.
 
+El formulario compartido «REPORTE FINAL de Eventos FMP» contiene reportes del organizador y usa el [archivo de reportes finales](REPORT_FORM_ARCHIVE.md). No debe conectarse a este puente como si cada respuesta fuera un participante. No se necesita modificar ese formulario para consultar sus preguntas en Estadísticos.
+
 ## Configuración de coordinación
 
 1. Abrir el editor del formulario de participantes con la cuenta institucional responsable. Usar el ID de `/forms/d/ID/edit`, **no** el ID público `/d/e/.../viewform`.
@@ -27,7 +29,7 @@ El reporte final vive en la plataforma. Este puente conserva el Google Form de *
 
 El puente lee todas las respuestas antes de enviar snapshots por evento aprobado. Hay un máximo de 5,000 respuestas y 2 MiB por snapshot; si se rebasa, se detiene ese envío con error y debe ampliarse la estrategia antes de usar eventos de ese tamaño. Los conteos son respuestas, no personas deduplicadas. Sin una pregunta de categoría se conserva «No capturada».
 
-Antes de publicar la vista de preguntas, aplicar `migrations/006_attendance_form_answers.sql` en Supabase y actualizar `Code.gs` en Apps Script. La próxima sincronización completa agregará las respuestas existentes que Google aún conserve. La página de estadísticos permite abrir un evento, ver el conteo de cada opción y descargar todas sus respuestas en CSV. Las preguntas de texto se muestran en la tabla y el CSV. Los datos personales tienen los mismos permisos de lectura que la asistencia: propietario del evento y coordinación. El formulario público consultado en noviembre de 2026 no tenía la pregunta «ID del evento»; agregarla y configurar `FMP_EVENT_ITEM_ID` es necesario para vincular respuestas.
+Antes de publicar la vista de preguntas de participantes, aplicar `migrations/006_attendance_form_answers.sql` en Supabase y actualizar `Code.gs` en Apps Script si se utiliza esta integración. La próxima sincronización completa agregará las respuestas existentes que Google aún conserve. La página de estadísticos permite abrir un evento con registros electrónicos, ver el conteo de cada opción y descargar todas sus respuestas en CSV. Las preguntas de texto se muestran en la tabla y el CSV. Los datos personales tienen los mismos permisos de lectura que la asistencia: propietario del evento y coordinación. La integración requiere una pregunta de ID en el formulario de participantes configurado.
 
 ## Prueba antes de anunciar la conexión
 

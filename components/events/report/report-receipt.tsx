@@ -74,7 +74,7 @@ export function ReportReceipt({
           target="_blank"
           rel="noopener noreferrer"
         >
-          Abrir lista de asistencia
+          Abrir lista de asistencia para descargar
         </a>
       )}
       <div className="flex flex-wrap gap-3">
