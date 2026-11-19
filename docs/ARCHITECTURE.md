@@ -65,3 +65,5 @@ Component-by-component detail: `docs/COMPONENTS.md`.
 ## Reportes finales y seguimiento
 
 El reporte final es nativo: rutas `/events/[id]/report` y `/events/[id]/attendance-list`. `lib/supabase-reports.ts`, `supabase-progress.ts` y `supabase-attendance.ts` consultan Supabase bajo RLS. Escrituras de reporte/preparación usan RPC acotadas; Google usa HMAC con secreto privado. La interfaz nunca recibe ese secreto. Ver [configuración de asistencia](GOOGLE_ATTENDANCE_SETUP.md).
+
+Estadísticos muestra las preguntas y respuestas del reporte final, con descarga por evento. Las respuestas históricas del formulario compartido se importan por CSV a un archivo separado, visible solo para administradores. Ver [archivo del formulario de reporte final](REPORT_FORM_ARCHIVE.md). No se confunde este archivo con la integración de registros individuales de asistencia.

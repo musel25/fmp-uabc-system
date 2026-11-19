@@ -107,3 +107,78 @@ export function reportCsvRows(
       ]),
   ]
 }
+
+/** Final-report fields corresponding to the shared Google Form. */
+export function reportQuestionSummary(rows: ReportAnalyticsRow[]) {
+  const reports = rows.flatMap((r) =>
+    r.report?.status === "submitted" ? [r.report] : [],
+  )
+  const count = (test: (r: EventReport) => boolean) =>
+    reports.filter(test).length
+  const teachers = reports.reduce((n, r) => n + r.teachers.length, 0)
+  const students = reports.reduce((n, r) => n + r.students.length, 0)
+  const totals = summarizeReports(rows, new Date())
+  return [
+    {
+      key: "id",
+      question: "ID del evento",
+      answered: reports.length,
+      summary: "Se asigna automáticamente desde el evento",
+    },
+    {
+      key: "name",
+      question: "Nombre de la actividad",
+      answered: reports.length,
+      summary: `${reports.length} eventos con reporte enviado`,
+    },
+    {
+      key: "email",
+      question: "Correo electrónico",
+      answered: count((r) => !!r.email),
+      summary: `${count((r) => !!r.email)} reportes con correo de contacto`,
+    },
+    {
+      key: "attendance",
+      question: "Número total de asistentes: docentes, alumnos y comunidad",
+      answered: count(
+        (r) =>
+          r.teacherCount !== null &&
+          r.studentCount !== null &&
+          r.communityCount !== null,
+      ),
+      summary: `${totals.totalAttendance} asistencias: ${totals.teacherCount} docentes, ${totals.studentCount} alumnos y ${totals.communityCount} de comunidad`,
+    },
+    {
+      key: "teachers",
+      question: "Nombre completo y grado de los docentes organizadores",
+      answered: count((r) => r.teacherMode !== null),
+      summary: `${teachers} docentes organizadores en ${count((r) => r.teachers.length > 0)} reportes`,
+    },
+    {
+      key: "students",
+      question: "Nombre completo y nivel de los estudiantes organizadores",
+      answered: count((r) => r.studentMode !== null),
+      summary: `${students} estudiantes organizadores en ${count((r) => r.students.length > 0)} reportes`,
+    },
+    {
+      key: "list",
+      question: "Listas de asistencia",
+      answered: count(
+        (r) => !!r.attendanceListUrl || r.attendanceBasis === "google",
+      ),
+      summary: `${count((r) => !!r.attendanceListUrl)} reportes con lista adjunta; ${count((r) => r.attendanceBasis === "google")} con registro electrónico verificado`,
+    },
+    {
+      key: "photos",
+      question: "Fotos representativas del evento",
+      answered: count((r) => r.photoUrls.length > 0),
+      summary: `${count((r) => r.photoUrls.length > 0)} reportes con fotografías`,
+    },
+    {
+      key: "narrative",
+      question: "Reseña del evento",
+      answered: count((r) => !!r.narrative.trim()),
+      summary: `${count((r) => !!r.narrative.trim())} reportes con reseña`,
+    },
+  ]
+}

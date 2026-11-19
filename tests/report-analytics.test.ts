@@ -1,9 +1,18 @@
 import { expect, it } from "vitest"
-import { summarizeReports, filterReportRows, reportCsvRows } from "@/lib/report-analytics"
+import {
+  summarizeReports,
+  filterReportRows,
+  reportCsvRows,
+  reportQuestionSummary,
+} from "@/lib/report-analytics"
 import { semesterOf, currentSemester } from "@/lib/semester"
 import { emptyReportValues } from "@/lib/event-report"
 import { event, progress } from "./fixtures"
 import type { EventReport } from "@/lib/types"
+import {
+  attendanceQuestionStats,
+  attendanceCsvRows,
+} from "@/lib/attendance-analytics"
 const report: EventReport = {
   ...emptyReportValues("a@example.test"),
   eventId: event.id,
@@ -39,6 +48,36 @@ it("counts reported attendance once, excludes Google and drafts", () => {
 })
 it("uses no invented average for no reports", () =>
   expect(summarizeReports([], new Date()).meanAttendance).toBeNull())
+it("summarizes each final-report question using submitted reports only", () => {
+  const submitted = {
+    ...report,
+    teacherMode: "listed" as const,
+    teachers: [{ name: "Ana", degree: "Dra." }],
+    studentMode: "none" as const,
+    attendanceListUrl: "https://example.test/lista",
+    photoUrls: ["https://example.test/foto"],
+    narrative: "RESEÑA",
+  }
+  const questions = reportQuestionSummary([
+    { event, report: submitted, progress },
+    {
+      event: { ...event, id: "draft" },
+      report: { ...submitted, status: "draft" },
+      progress,
+    },
+  ])
+  expect(questions.find((q) => q.key === "attendance")?.summary).toBe(
+    "6 asistencias: 1 docentes, 2 alumnos y 3 de comunidad",
+  )
+  expect(questions.find((q) => q.key === "teachers")?.summary).toBe(
+    "1 docentes organizadores en 1 reportes",
+  )
+  expect(questions.find((q) => q.key === "students")?.answered).toBe(1)
+  expect(questions.find((q) => q.key === "photos")?.summary).toBe(
+    "1 reportes con fotografías",
+  )
+  expect(questions.every((q) => q.answered <= 1)).toBe(true)
+})
 it("uses the local semester at a UTC boundary", () =>
   expect(semesterOf("2026-07-01T01:00:00Z")).toBe("2026-1"))
 it("does not truncate large results", () => {
@@ -51,16 +90,109 @@ it("does not truncate large results", () => {
 })
 
 it("defaults to the current Tijuana semester and rolls over in January", () => {
- expect(currentSemester(new Date("2026-09-24T04:00:00Z"))).toBe("2026-2")
- expect(currentSemester(new Date("2027-01-01T07:59:59Z"))).toBe("2026-2")
- expect(currentSemester(new Date("2027-01-01T08:00:00Z"))).toBe("2027-1")
+  expect(currentSemester(new Date("2026-09-24T04:00:00Z"))).toBe("2026-2")
+  expect(currentSemester(new Date("2027-01-01T07:59:59Z"))).toBe("2026-2")
+  expect(currentSemester(new Date("2027-01-01T08:00:00Z"))).toBe("2027-1")
 })
 it("keeps late reports in the event semester for totals and exports", () => {
- const rows=[{event,report,progress},{event:{...event,id:"prior",startDate:"2026-05-01T18:00:00Z"},report:{...report,eventId:"prior"},progress}]
- const filtered=filterReportRows(rows,{semester:"2026-2"})
- expect(filtered.map(r=>r.event.id)).toEqual([event.id])
- expect(summarizeReports(filtered,new Date()).totalAttendance).toBe(6)
- expect(reportCsvRows(filtered)).toHaveLength(2)
- expect(reportCsvRows(filtered)[1][2]).toBe("2026-2")
- expect(filterReportRows(rows,{})).toHaveLength(2)
+  const rows = [
+    { event, report, progress },
+    {
+      event: { ...event, id: "prior", startDate: "2026-05-01T18:00:00Z" },
+      report: { ...report, eventId: "prior" },
+      progress,
+    },
+  ]
+  const filtered = filterReportRows(rows, { semester: "2026-2" })
+  expect(filtered.map((r) => r.event.id)).toEqual([event.id])
+  expect(summarizeReports(filtered, new Date()).totalAttendance).toBe(6)
+  expect(reportCsvRows(filtered)).toHaveLength(2)
+  expect(reportCsvRows(filtered)[1][2]).toBe("2026-2")
+  expect(filterReportRows(rows, {})).toHaveLength(2)
+})
+it("counts each choice once per response and lists text questions without exposing values", () => {
+  const responses = [
+    {
+      eventId: event.id,
+      sourceResponseId: "1",
+      submittedAt: "2026-09-21T18:00:00Z",
+      name: "Ana",
+      email: null,
+      category: null,
+      answers: [
+        {
+          questionId: "3",
+          question: "Género",
+          kind: "choice" as const,
+          value: "Mujer",
+        },
+        {
+          questionId: "4",
+          question: "Programa",
+          kind: "choice" as const,
+          value: ["Medicina", "Posgrado"],
+        },
+        {
+          questionId: "5",
+          question: "Matrícula",
+          kind: "text" as const,
+          value: "123",
+        },
+      ],
+    },
+    {
+      eventId: event.id,
+      sourceResponseId: "2",
+      submittedAt: "2026-09-21T18:01:00Z",
+      name: "Luis",
+      email: null,
+      category: null,
+      answers: [
+        {
+          questionId: "3",
+          question: "Género",
+          kind: "choice" as const,
+          value: "Hombre",
+        },
+        {
+          questionId: "4",
+          question: "Programa",
+          kind: "choice" as const,
+          value: ["Medicina"],
+        },
+      ],
+    },
+  ]
+  expect(attendanceQuestionStats(responses)).toEqual([
+    {
+      questionId: "3",
+      question: "Género",
+      kind: "choice",
+      responses: 2,
+      choices: [
+        { value: "Mujer", count: 1 },
+        { value: "Hombre", count: 1 },
+      ],
+    },
+    {
+      questionId: "4",
+      question: "Programa",
+      kind: "choice",
+      responses: 2,
+      choices: [
+        { value: "Medicina", count: 2 },
+        { value: "Posgrado", count: 1 },
+      ],
+    },
+    {
+      questionId: "5",
+      question: "Matrícula",
+      kind: "text",
+      responses: 1,
+      choices: [],
+    },
+  ])
+  expect(attendanceCsvRows(event, responses)[0]).toContain("Matrícula")
+  expect(attendanceCsvRows(event, responses)[1].at(-1)).toBe("123")
+  expect(attendanceCsvRows(event, responses)[2].at(-1)).toBe("")
 })

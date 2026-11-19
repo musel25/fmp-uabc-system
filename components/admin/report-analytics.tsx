@@ -13,11 +13,14 @@ import {
 } from "recharts"
 import { Button } from "@/components/ui/button"
 import { StatCard } from "@/components/ui/stat-card"
+import { AttendanceQuestionDetail } from "@/components/admin/attendance-question-detail"
+import { ReportReceipt } from "@/components/events/report/report-receipt"
 import { getReportAnalyticsRows } from "@/lib/supabase-reports"
 import {
   filterReportRows,
   summarizeReports,
   reportCsvRows,
+  reportQuestionSummary,
   type ReportAnalyticsRow,
 } from "@/lib/report-analytics"
 import { currentSemester, semesterOf } from "@/lib/semester"
@@ -30,6 +33,7 @@ export function ReportAnalytics() {
     [semester, setSemester] = useState(() => currentSemester()),
     [program, setProgram] = useState(""),
     [eventId, setEventId] = useState(""),
+    [detailEvent, setDetailEvent] = useState<Event | null>(null),
     [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true
@@ -52,6 +56,15 @@ export function ReportAnalytics() {
       active = false
     }
   }, [reload])
+  useEffect(() => {
+    if (detailEvent) {
+      document.getElementById("respuestas-reporte")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }
+  }, [detailEvent])
+  useEffect(() => setDetailEvent(null), [semester, program, eventId])
   const filtered = useMemo(
     () =>
       filterReportRows(rows, {
@@ -65,6 +78,8 @@ export function ReportAnalytics() {
     () => summarizeReports(filtered, new Date()),
     [filtered],
   )
+  const questions = useMemo(() => reportQuestionSummary(filtered), [filtered])
+  const detailRow = filtered.find((r) => r.event.id === detailEvent?.id)
   const semesters = Array.from(
     new Set([
       currentSemester(),
@@ -114,17 +129,23 @@ export function ReportAnalytics() {
         <h1 className="font-display text-3xl">Resultados de eventos</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Asistencias declaradas en reportes enviados. Una persona puede
-          participar en varios eventos; las respuestas de Google se muestran por
-          separado.
+          participar en varios eventos. Consulta las respuestas anteriores de
+          Google en la pestaña «Formulario anterior».
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           El semestre corresponde a la fecha del evento, aunque el reporte se
-          entregue después. Al abrir esta vista se selecciona el semestre actual.
+          entregue después. Al abrir esta vista se selecciona el semestre
+          actual.
         </p>
       </header>
       <div className="no-print grid gap-4 sm:grid-cols-3">
         {[
-          ["Semestre del evento", semester, setSemester, semesters.map((s) => [s, s])],
+          [
+            "Semestre del evento",
+            semester,
+            setSemester,
+            semesters.map((s) => [s, s]),
+          ],
           [
             "Programa",
             program,
@@ -178,6 +199,36 @@ export function ReportAnalytics() {
             })}{" "}
         · Entregas fuera de plazo: {stats.lateEvents}
       </p>
+      <section className="card-uabc overflow-x-auto p-5">
+        <h2 className="font-display text-lg">Preguntas del reporte final</h2>
+        <p className="my-2 text-sm text-muted-foreground">
+          Campos equivalentes al formulario de Google compartido. Solo se
+          incluyen reportes enviados. Consulta nombres, textos y archivos en
+          «Ver respuestas» de cada evento.
+        </p>
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th className="p-2">Pregunta</th>
+              <th className="p-2">Reportes con respuesta</th>
+              <th className="p-2">Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {questions.map((q) => (
+              <tr className="border-t" key={q.key}>
+                <th className="p-2 font-normal" scope="row">
+                  {q.question}
+                </th>
+                <td className="p-2">
+                  {q.answered} de {stats.reportedEvents}
+                </td>
+                <td className="p-2">{q.summary}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
       {chart.length > 0 && (
         <section className="card-uabc p-5">
           <h2 className="font-display text-lg">
@@ -263,7 +314,8 @@ export function ReportAnalytics() {
                 "Docentes",
                 "Alumnos",
                 "Comunidad",
-                "Respuestas Google",
+                "Registros electrónicos",
+                "Respuestas y asistencia",
               ].map((label) => (
                 <th className="p-3" key={label}>
                   {label}
@@ -303,9 +355,41 @@ export function ReportAnalytics() {
                 ))}
                 <td className="p-3">
                   {progress.state === "loaded" &&
-                  progress.attendance.state === "fresh"
-                    ? progress.attendance.responseCount
+                  progress.attendance.responseCount !== null
+                    ? `${progress.attendance.responseCount}${progress.attendance.state === "stale" ? " (sin actualizar)" : ""}`
                     : "Sin verificar"}
+                </td>
+                <td className="space-y-2 p-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      report?.status !== "submitted" &&
+                      !(
+                        progress.state === "loaded" &&
+                        progress.attendance.responseCount
+                      )
+                    }
+                    onClick={() => setDetailEvent(event)}
+                  >
+                    Ver respuestas
+                  </Button>
+                  {report?.status === "submitted" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        downloadCsv(
+                          createCsv(
+                            reportCsvRows([{ event, report, progress }]),
+                          ),
+                          `reporte-asistencia-${event.id}.csv`,
+                        )
+                      }
+                    >
+                      Descargar reporte CSV
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -315,6 +399,33 @@ export function ReportAnalytics() {
           <p className="p-5 text-sm">No hay eventos para estos filtros.</p>
         )}
       </div>
+      {detailRow && (
+        <section
+          id="respuestas-reporte"
+          className="space-y-4 scroll-mt-6"
+          aria-label={`Respuestas de ${detailRow.event.name}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-xl">
+              Respuestas y asistencia del evento
+            </h2>
+            <Button variant="outline" onClick={() => setDetailEvent(null)}>
+              Cerrar detalle
+            </Button>
+          </div>
+          <p className="break-all text-sm">ID: {detailRow.event.id}</p>
+          {detailRow.report?.status === "submitted" && (
+            <ReportReceipt report={detailRow.report} event={detailRow.event} />
+          )}
+          {detailRow.progress.state === "loaded" &&
+            !!detailRow.progress.attendance.responseCount && (
+              <AttendanceQuestionDetail
+                key={detailRow.event.id}
+                event={detailRow.event}
+              />
+            )}
+        </section>
+      )}
     </div>
   )
 }

@@ -162,6 +162,7 @@ export function dbRowToAttendanceResponse(r: EventRow): AttendanceResponse {
     name: r.name as string,
     email: r.email as string | null,
     category: r.category as AttendanceResponse["category"],
+    answers: (r.answers ?? []) as AttendanceResponse["answers"],
   }
 }
 export function dbRowToPreparation(r: EventRow | null): PreparationValues {
@@ -181,6 +182,15 @@ export function dbRowToWorkflowSettings(r: EventRow): WorkflowSettings {
 }
 
 import type { EventProgress } from "./types"
+import type { ReportFormArchive } from "./report-form-archive"
+export function dbRowToReportFormArchive(r: EventRow): ReportFormArchive {
+  return {
+    headers: r.headers as string[],
+    responses: r.responses as string[][],
+    version: r.version as number,
+    importedAt: r.imported_at as string,
+  }
+}
 export function dbRowsToProgress(
   event: EventRow,
   report: EventRow | null,

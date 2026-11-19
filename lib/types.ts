@@ -157,6 +157,13 @@ export interface AttendanceResponse {
   name: string
   email: string | null
   category: AttendeeCategory
+  answers: AttendanceAnswer[]
+}
+export interface AttendanceAnswer {
+  questionId: string
+  question: string
+  kind: "choice" | "text"
+  value: string | string[]
 }
 export interface PreparationValues {
   reservationDone: boolean
